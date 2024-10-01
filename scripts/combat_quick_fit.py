@@ -62,7 +62,7 @@ def _build_arg_parser():
         "-m",
         "--method",
         default="clinic",
-        choices=["vanilla", "pairwise", "clinic"],
+        choices=["vanilla", "vanillamid", "pairwise", "clinic"],
         help="Harmonization method.",
     )
     p.add_argument(
@@ -141,13 +141,13 @@ def main():
         raise AssertionError("Robust is not implemented.")
 
     if args.regul_mov is None:
-        if args.method in ["vanilla", "pairwise"]:
+        if args.method in ["vanilla", "vanillamid", "pairwise"]:
             args.regul_mov = 0
         else:
             args.regul_mov = -1
 
     if args.degree is None:
-        if args.method in ["vanilla", "pairwise"]:
+        if args.method in ["vanilla", "vanillamid", "pairwise"]:
             args.degree = 1
         else:
             args.degree = 2

@@ -5,9 +5,9 @@ import pandas as pd
 from clinical_combat.harmonization.QuickCombat import QuickCombat
 
 
-class QuickCombatVanilla(QuickCombat):
+class QuickCombatVanillaMid(QuickCombat):
     """
-    Quick ComBat: Harmonize the moving site to the reference site.
+    Quick ComBat: Harmonize the moving site and the reference site to midpoint.
     Regression parameters are jointly fitted as in Fortin et al. 2017.
     """
 
@@ -22,13 +22,12 @@ class QuickCombatVanilla(QuickCombat):
 
         """
         super().set_model_fit_params(ref_data, mov_data)
-        self.model_params["name"] = "vanilla"
+        self.model_params["name"] = "vanillamid"
 
     def standardize_moving_data(self, X, Y):
         """
-        Standardize the data (Y). Combat Vanilla standardize the moving site data with the
-        reference site intercept. Because the data are harmonize to the reference site, sigma is
-        obtained from the reference site data.
+        Standardize the data (Y). Combat Vanilla standardize the moving site data with 
+        the jointly estimated intercept. 
 
         .. math::
         S_Y = (Y - X^T B - alpha_{ref}) / sigma_{ref}
@@ -42,14 +41,14 @@ class QuickCombatVanilla(QuickCombat):
         for i in range(len(X)):
             covariate_effect = np.dot(X[i][1:, :].transpose(), self.beta_mov[i])
             s_y.append(
-                (Y[i] - self.alpha_ref[i] - covariate_effect) / (self.sigma_ref[i])
+                (Y[i] - self.alpha_mov[i] - covariate_effect) / (self.sigma_mov[i])
             )
         return s_y
 
     def fit(self, ref_data, mov_data):
         """
-        Combat Vanilla fit. The moving site beta and alpha are fitted using all data.
-        The reference site alpha and beta is fitted using the reference site data.
+        Combat Vanilla Midpoint fit. The moving site beta and alpha are fitted using all 
+        data.
 
         ref_data: DataFrame
             Data of the reference site.
@@ -58,25 +57,23 @@ class QuickCombatVanilla(QuickCombat):
         """
         ref_data, mov_data = self.prepare_data(ref_data, mov_data)
 
-        # fit intercept and covariates of the reference site using reference site data
-        design_ref, y_ref = self.get_design_matrices(ref_data)
-        self.alpha_ref, self.beta_ref = QuickCombat.get_alpha_beta(design_ref, y_ref)
-        self.sigma_ref = QuickCombat.get_sigma(
-            design_ref, y_ref, self.alpha_ref, self.beta_ref
-        )
-
+ 
         # fit intercept and covariates of the moving site using all data
         all_data = pd.concat([ref_data, mov_data])
 
         design_mov, y_mov = self.get_design_matrices(mov_data)
         design_all, y_all = self.get_design_matrices(all_data)
-        self.alpha_mov, self.beta_mov = QuickCombat.get_alpha_beta(design_all, y_all)
-        self.sigma_mov = QuickCombat.get_sigma(
-            design_mov,
-            y_mov,
-            self.alpha_mov,
-            self.beta_mov,
+        alpha_all, beta_all = QuickCombat.get_alpha_beta(design_all, y_all)
+        sigma_all = QuickCombat.get_sigma(
+            design_all,
+            y_all,
+            alpha_all,
+            beta_all,
         )
+        self.alpha_mov = self.alpha_ref = alpha_all
+        self.beta_mov = self.beta_ref = beta_all
+        self.sigma_mov = self.sigma_ref = sigma_all
+
 
         z = self.standardize_moving_data(design_mov, y_mov)
 

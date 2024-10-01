@@ -13,6 +13,10 @@ Harmonization methods:
     vanilla:
             uses both moving and reference data to fit the covariates regression parameters
             (Beta_mov). Fortin et al., 2017 method, see https://pubmed.ncbi.nlm.nih.gov/28826946/
+    vanillamid:
+            uses both moving and reference data to fit the covariates regression parameters
+            (Beta_mov). Fortin et al., 2017 method, see https://pubmed.ncbi.nlm.nih.gov/28826946/
+            Harmonize to the midpoint between the reference and moving sites
     pairwise:
             uses only the moving data to to fit the covariates regression parameters
             (Beta_mov)
@@ -74,7 +78,7 @@ def _build_arg_parser():
         "-m",
         "--method",
         default="clinic",
-        choices=["vanilla", "pairwise", "clinic"],
+        choices=["vanilla", "vanillamid", "pairwise", "clinic"],
         help="Harmonization method.",
     )
     p.add_argument(

@@ -7,6 +7,7 @@ from clinical_combat.harmonization.QuickCombatClinic import QuickCombatClinic
 from clinical_combat.harmonization.QuickCombatPairwise import \
     QuickCombatPairwise
 from clinical_combat.harmonization.QuickCombatVanilla import QuickCombatVanilla
+from clinical_combat.harmonization.QuickCombatVanillaMid import QuickCombatVanillaMid
 
 
 
@@ -25,6 +26,16 @@ def from_model_name(
 
     if name == "vanilla":
         QC = QuickCombatVanilla(
+            ignore_sex_covariate=ignore_sex_covariate,
+            ignore_handedness_covariate=ignore_handedness_covariate,
+            use_empirical_bayes=use_empirical_bayes,
+            limit_age_range=limit_age_range,
+            degree=degree,
+            regul_ref=regul_ref,
+            regul_mov=regul_mov
+        )    
+    elif name == "vanillamid":
+        QC = QuickCombatVanillaMid(
             ignore_sex_covariate=ignore_sex_covariate,
             ignore_handedness_covariate=ignore_handedness_covariate,
             use_empirical_bayes=use_empirical_bayes,
