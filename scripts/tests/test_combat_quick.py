@@ -11,11 +11,11 @@ import numpy.testing as npt
 import clinical_combat
 
 
-def test_quick_combat_vanilla():
+def test_quick_combat_classic():
     folder = pathlib.Path(clinical_combat.__file__).resolve().parent.parent
     data_path = os.path.join(folder, "docs/data/")
 
-    out = os.path.join(folder, "scripts/tests/out/QuickCombat_vanilla")
+    out = os.path.join(folder, "scripts/tests/out/QuickCombat_classic")
     if os.path.exists(out):
         shutil.rmtree(out)
 
@@ -25,24 +25,24 @@ def test_quick_combat_vanilla():
         + "CamCAN.md.raw.csv.gz "
         + data_path
         + "ShamCamCAN.md.raw.csv.gz "
-        + "-m vanilla "
+        + "-m classic "
         + "--out_dir "
         + out
     )
     subprocess.call(cmd, shell=True)
 
-    model = os.path.join(out, "ShamCamCAN-CamCAN.md.vanilla.model.csv")
-    data = os.path.join(out, "ShamCamCAN.md.vanilla.csv.gz")
+    model = os.path.join(out, "ShamCamCAN-CamCAN.md.classic.model.csv")
+    data = os.path.join(out, "ShamCamCAN.md.classic.csv.gz")
     fig1 = os.path.join(
         out, "AgeCurve_CamCAN-ShamCamCAN_raw_md_mniIITmaskskeletonFA.png"
     )
     fig2 = os.path.join(
-        out, "AgeCurve_CamCAN-ShamCamCAN_vanilla_md_mniIITmaskskeletonFA.png"
+        out, "AgeCurve_CamCAN-ShamCamCAN_classic_md_mniIITmaskskeletonFA.png"
     )
     fig3 = os.path.join(
-        out, "DataModels_CamCAN-ShamCamCAN_vanilla_md_mniIITmaskskeletonFA.png"
+        out, "DataModels_CamCAN-ShamCamCAN_classic_md_mniIITmaskskeletonFA.png"
     )
-    dist1 = os.path.join(out, "ShamCamCAN.md.vanilla.bhattacharrya.txt")
+    dist1 = os.path.join(out, "ShamCamCAN.md.classic.bhattacharrya.txt")
     dist2 = os.path.join(out, "ShamCamCAN.md.raw.bhattacharrya.txt")
 
     npt.assert_(os.path.exists(model), msg="Model file not generated.")
@@ -57,8 +57,8 @@ def test_quick_combat_vanilla():
 
     model_ = os.path.join(
         folder,
-        "scripts/tests/target_out/QuickCombat_vanilla",
-        "ShamCamCAN-CamCAN.md.vanilla.model.csv",
+        "scripts/tests/target_out/QuickCombat_classic",
+        "ShamCamCAN-CamCAN.md.classic.model.csv",
     )
     a = np.loadtxt(model, dtype=str, delimiter=",")
     b = np.loadtxt(model_, dtype=str, delimiter=",")
@@ -66,8 +66,8 @@ def test_quick_combat_vanilla():
 
     data_ = os.path.join(
         folder,
-        "scripts/tests/target_out/QuickCombat_vanilla",
-        "ShamCamCAN.md.vanilla.csv.gz",
+        "scripts/tests/target_out/QuickCombat_classic",
+        "ShamCamCAN.md.classic.csv.gz",
     )
     a = pd.read_csv(data)["mean"].to_numpy()
     b = pd.read_csv(data_)["mean"].to_numpy()
@@ -253,7 +253,7 @@ def test_corrupt_data():
         + "CamCAN.md.raw.csv.gz "
         + out
         + "/corruptCamCAN.md.raw.csv.gz "
-        + "--mult 90 --add 110 --slope 75 --nbr_sub 50 --site_name corruptcamcan --HC"
+        + "--mult 90 --add 110 --slope 75 --nbr_sub 0 --site_name corruptcamcan --HC"
     )
     subprocess.call(cmd, shell=True)
     data = os.path.join(out, "corruptCamCAN.md.raw.csv.gz")
