@@ -125,7 +125,6 @@ class QuickCombatClassic(QuickCombat):
             raise AssertionError("Model parameters are not fitted.")
 
         design, Y = self.get_design_matrices(data)
-        z = self.standardize_data(design, Y)
         harm_y = []
 
         for i in range(len(design)):
