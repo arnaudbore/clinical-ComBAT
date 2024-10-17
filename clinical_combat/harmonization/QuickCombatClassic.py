@@ -65,8 +65,8 @@ class QuickCombatClassic(QuickCombat):
         design_all, y_all = self.get_design_matrices(all_data)
         self.alpha_mov, self.beta_mov = QuickCombat.get_alpha_beta(design_all, y_all)
         self.sigma_mov = QuickCombat.get_sigma(
-            design_mov,
-            y_mov,
+            design_all,
+            y_all,
             self.alpha_mov,
             self.beta_mov,
         )
