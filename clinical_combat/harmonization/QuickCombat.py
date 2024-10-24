@@ -623,7 +623,9 @@ class QuickCombat(QuickHarmonizationMethod):
         # b: scale of the multplicative bias (scale in an inver-gamma)
         b = QuickCombat.estimate_b_prior(delta_hat)
 
-        n = len(sdat)
+        # The number of subject per bundle may vary. Here we take the mean.
+        n = int(np.mean([len(d) for d in sdat]))
+
         g_old = gamma_hat.copy()
         d_old = delta_hat.copy()
 
@@ -640,7 +642,7 @@ class QuickCombat(QuickHarmonizationMethod):
 
             # postvar
             d_new = (0.5 * sum2 + b) / (n / 2.0 + a - 1.0)
-
+            d_new = d_new**0.5
             change = max(
                 (abs(g_new - g_old) / g_old).max(), (abs(d_new - d_old) / d_old).max()
             )
