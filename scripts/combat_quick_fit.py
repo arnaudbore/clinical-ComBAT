@@ -125,6 +125,12 @@ def _build_arg_parser():
         help="Combat Clinic hyperparameter for the covariate fit of the moving site data. "
         "It must be >= 1. [%(default)s]",
     )
+    p.add_argument(
+        "--ignore_bundles",
+        nargs="+",
+        help="List of bundle to ignore.",
+        default=['left_ventricle', 'right_ventricle']
+    )
 
     add_verbose_arg(p)
     add_overwrite_arg(p)
@@ -154,7 +160,11 @@ def main():
             args.degree = 2
 
     ref_data = pd.read_csv(args.ref_data)
+    ref_data = ref_data[~ref_data['bundle'].isin(args.ignore_bundles)]
     mov_data = pd.read_csv(args.mov_data)
+    mov_data = mov_data[~mov_data['bundle'].isin(args.ignore_bundles)]
+
+    logging.info("Bundles: %s will be ignored.", args.ignore_bundles)
 
     # Check if moving site is a string
     if mov_data.site.dtype != "str":
