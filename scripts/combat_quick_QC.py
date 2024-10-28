@@ -93,7 +93,7 @@ def main():
         args.degree_qc = model.degree
 
     QC = from_model_name(
-        "pairwise",
+        "clinic",
         ignore_handedness_covariate=model.ignore_handedness_covariate,
         ignore_sex_covariate=model.ignore_sex_covariate,
         use_empirical_bayes=False,
@@ -102,7 +102,7 @@ def main():
         regul_ref=0,
         regul_mov=0,
         nu=0,
-        tau=0,
+        tau=2,
     )
     QC.fit(ref_data, ref_data)
 

@@ -4,8 +4,6 @@ from __future__ import absolute_import
 import ast
 
 from clinical_combat.harmonization.QuickCombatClinic import QuickCombatClinic
-from clinical_combat.harmonization.QuickCombatPairwise import \
-    QuickCombatPairwise
 from clinical_combat.harmonization.QuickCombatClassic import QuickCombatClassic
 
 
@@ -24,16 +22,6 @@ def from_model_name(
 
     if name == "classic":
         QC = QuickCombatClassic(
-            ignore_sex_covariate=ignore_sex_covariate,
-            ignore_handedness_covariate=ignore_handedness_covariate,
-            use_empirical_bayes=use_empirical_bayes,
-            limit_age_range=limit_age_range,
-            degree=degree,
-            regul_ref=regul_ref,
-            regul_mov=regul_mov
-        )    
-    elif name == "pairwise":
-        QC = QuickCombatPairwise(
             ignore_sex_covariate=ignore_sex_covariate,
             ignore_handedness_covariate=ignore_handedness_covariate,
             use_empirical_bayes=use_empirical_bayes,

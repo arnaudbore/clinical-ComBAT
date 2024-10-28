@@ -121,7 +121,7 @@ def main():
         args.site_name = str(data.site.unique()) + "_corrupted"
 
     model = from_model_name(
-        "pairwise",
+        "clinic",
         ignore_handedness_covariate=args.ignore_handedness,
         ignore_sex_covariate=args.ignore_sex,
         use_empirical_bayes=False,
@@ -130,7 +130,7 @@ def main():
         regul_ref=0,
         regul_mov=0,
         nu=0,
-        tau=0,
+        tau=2,
     )
     model.bundle_names = data.bundle.unique()
 

@@ -13,9 +13,6 @@ Harmonization methods:
     clinic (default):
             uses a priori from the reference site to fit the moving site
             (Beta_mov, variance)
-    pairwise:
-            uses only the moving data to to fit the covariates regression parameters
-            (Beta_mov)
 
 NOTE: the harmonization parameters (regul, degree, nu, tau) are preset according to the
       harmonization method chosen. See default settings.
@@ -74,7 +71,7 @@ def _build_arg_parser():
         "-m",
         "--method",
         default="clinic",
-        choices=["classic", "pairwise", "clinic"],
+        choices=["classic", "clinic"],
         help="Harmonization method.",
     )
     p.add_argument(
@@ -114,13 +111,13 @@ def _build_arg_parser():
         "--regul_mov",
         type=float,
         help="Regularization parameter for the moving site data. Set to '-1' for automatic tuning "
-        + "[default=0 for classic and pairwise; -1 for clinic]",
+        + "[default=0 for classic; -1 for clinic]",
     )
     p.add_argument(
         "--degree",
         type=int,
         help="Degree of the polynomial fit in Combat. "
-        + "[default=1 for classic and pairwise; 2 for clinic].",
+        + "[default=1 for classic; 2 for clinic].",
     )
     p.add_argument(
         "--nu",

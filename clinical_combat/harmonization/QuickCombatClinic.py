@@ -4,10 +4,9 @@ import logging
 import numpy as np
 
 from clinical_combat.harmonization.QuickCombat import QuickCombat
-from clinical_combat.harmonization.QuickCombatPairwise import QuickCombatPairwise
 
 
-class QuickCombatClinic(QuickCombatPairwise):
+class QuickCombatClinic(QuickCombat):
     """
     Quick ComBat: Harmonize the moving site to the reference site.
     Each site regression parameters is fitted independently.
@@ -182,6 +181,7 @@ class QuickCombatClinic(QuickCombatPairwise):
         logging.warning("No optimal reg term found, set reg to: %d", max_reg)
         return max_reg
 
+
     def eval_fit(self, ref_models, mov_models, mov_mask):
 
         tau1 = 1 / self.tau
@@ -197,6 +197,75 @@ class QuickCombatClinic(QuickCombatPairwise):
             evals.append(v)
 
         return np.sum(evals)
+
+
+    def standardize_moving_data(self, X, Y):
+        """
+        Standardize the data (Y). Combat Pairwise standardize the moving site data with 
+        the moving site intercept. Because the data are harmonize to the reference site, 
+        sigma is obtained from the reference site data.
+
+        .. math::
+        S_Y = (Y - X^T B - alpha_{mov}) / sigma_{ref}
+
+        X: array
+            The design matrix of the covariates.
+        Y: array
+            The values corresponding to the design matrix.
+        """
+        s_y = []
+        for i in range(len(X)):
+            covariate_effect = np.dot(X[i][1:, :].transpose(), self.beta_mov[i])
+            s_y.append(
+                (Y[i] - self.alpha_mov[i] - covariate_effect) / (self.sigma_ref[i])
+            )
+        return s_y
+
+
+    def apply(self, data):
+        """
+        Apply the harmonization fitted model to data.
+
+        data: df
+            Dataframe representing the data to harmonized.
+
+        Returns
+        -------
+        harm_y: array
+            Harmonized data values.
+        """
+        if (
+            self.alpha_ref is None
+            or self.beta_ref is None
+            or self.sigma_ref is None
+            or self.gamma_ref is None
+            or self.delta_ref is None
+            or self.alpha_mov is None
+            or self.beta_mov is None
+            or self.sigma_mov is None
+            or self.gamma_mov is None
+            or self.delta_mov is None
+        ):
+            raise AssertionError("Model parameters are not fitted.")
+
+        design, Y = self.get_design_matrices(data)
+        z = self.standardize_moving_data(design, Y)
+
+        harm_y = []
+
+        for i in range(len(design)):
+            covariate_effect_ref = np.dot(
+                design[i][1:, :].transpose(), self.beta_ref[i]
+            )
+
+            harm_y.append(
+                self.sigma_ref[i] / self.delta_mov[i] * (z[i] - self.gamma_mov[i])
+                + self.alpha_ref[i]
+                + covariate_effect_ref
+            )
+
+        return harm_y
+
 
     def fit(self, ref_data, mov_data):
         """
