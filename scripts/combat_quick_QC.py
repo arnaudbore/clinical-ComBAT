@@ -62,6 +62,12 @@ def _build_arg_parser():
         help="Output txt results filename. ['mov_data.bhattacharrya.txt']",
         default="",
     )
+    p.add_argument(
+    "--ignore_bundles",
+    nargs="+",
+    help="List of bundle to ignore.",
+    default=['left_ventricle', 'right_ventricle']
+    )
     add_verbose_arg(p)
     add_overwrite_arg(p)
 
@@ -73,9 +79,14 @@ def main():
     args = parser.parse_args()
     logging.getLogger().setLevel(logging.getLevelName(args.verbose))
 
-    ref_data = pd.read_csv(args.ref_data).query("disease == 'HC'")
+    ref_data = pd.read_csv(args.ref_data).query("disease == 'HC'") 
+    ref_data = ref_data[~ref_data['bundle'].isin(args.ignore_bundles)]
     mov_data = pd.read_csv(args.mov_data).query("disease == 'HC'")
-    
+    mov_data = mov_data[~mov_data['bundle'].isin(args.ignore_bundles)]
+
+    logging.info("Bundles: %s will be ignored.", args.ignore_bundles)
+
+
     model = from_model_filename(args.model)
 
     if args.degree_qc == 0:

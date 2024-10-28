@@ -645,7 +645,7 @@ class QuickCombat(QuickHarmonizationMethod):
             change = max(
                 (abs(g_new - g_old) / g_old).max(), (abs(d_new - d_old) / d_old).max()
             )
-            g_old = g_new
-            d_old = d_new
+            g_old = g_new.copy()
+            d_old = d_new.copy()
             count = count + 1
         return g_new, d_new
