@@ -11,6 +11,120 @@ class QuickCombatClassic(QuickCombat):
     Regression parameters are jointly fitted as in Fortin et al. 2017.
     """
 
+    def __init__(
+            self,
+            bundle_names=None,
+            model_params=None,
+            ignore_sex_covariate=False,
+            ignore_handedness_covariate=False,
+            use_empirical_bayes=True,
+            limit_age_range=False,
+            degree=1,
+            regul_ref=0,
+            regul_mov=0,
+            alpha=None,
+            beta=None,
+            sigma=None,
+            gamma_ref=None,
+            delta_ref=None,        
+            gamma_mov=None,
+            delta_mov=None,
+        ):
+        """
+        alpha: Array
+            Covariates intercept parameter.
+        beta: Array
+            Covariates slope parameters.
+        sigma: Array
+            Standard deviation.
+        gamma_ref: Array
+            Additive bias of the reference site.
+        delta_ref: Array
+            Multiplicative bias of the reference site.        
+        gamma_mov: Array
+            Additive bias of the moving site.
+        delta_mov: Array
+            Multiplicative bias of the moving site.
+
+        """
+        super().__init__(
+            bundle_names,
+            model_params,
+            ignore_sex_covariate,
+            ignore_handedness_covariate,
+            use_empirical_bayes,
+            limit_age_range,
+            degree,
+            regul_ref,
+            regul_mov
+        )
+        self.alpha = alpha
+        self.beta = beta
+        self.sigma = sigma
+        self.gamma_ref = gamma_ref
+        self.delta_ref = delta_ref
+        self.gamma_mov = gamma_mov
+        self.delta_mov = delta_mov
+
+
+    def initialize_from_model_params(self, model_filename):
+        """
+        Initialize the object from a model file
+
+        model_filename: str
+            Model filename
+
+        """
+        super().initialize_from_model_params(model_filename)
+        nb = len(self.get_beta_labels())
+
+        params = np.loadtxt(model_filename, delimiter=",", dtype=str, skiprows=1)
+        self.bundle_names = params[0, 1:]
+        self.alpha = params[1, 1:].astype("float64").transpose()
+        self.beta = params[2 : 2 + nb, 1:].astype("float64").transpose()
+        self.sigma = params[2 + nb, 1:].astype("float64").transpose()
+        self.gamma_ref = params[3 + nb, 1:].astype("float64").transpose()
+        self.delta_ref = params[4 + nb, 1:].astype("float64").transpose()
+        self.gamma_mov = params[5 + nb, 1:].astype("float64").transpose()
+        self.delta_mov = params[6 + nb, 1:].astype("float64").transpose()
+
+
+    def save_model(self, model_filename):
+        """
+        Save the harmonization model to file.
+
+        model_filename: str
+            Model filename.
+
+        """
+        params = np.hstack(
+            [
+                self.bundle_names.reshape(-1, 1),
+                self.alpha.reshape(-1, 1),
+                self.beta,
+                self.sigma.reshape(-1, 1),
+                self.gamma_ref.reshape(-1, 1),
+                self.delta_ref.reshape(-1, 1),                
+                self.gamma_mov.reshape(-1, 1),
+                self.delta_mov.reshape(-1, 1),
+            ]
+        ).transpose()
+
+        beta_labels = self.get_beta_labels()
+        param_labels = ["bundle_names", "intercept"]
+        param_labels.extend(self.get_beta_labels())
+        param_labels.append("sigma")
+        for site in ["ref", "mov"]:
+            param_labels.append(site + "_gamma")
+            param_labels.append(site + "_delta")
+
+        param_labels = np.array(param_labels).reshape([-1, 1])
+
+        params = np.hstack([param_labels, params])
+        header = str(self.model_params)
+        np.savetxt(model_filename, params, delimiter=",", fmt="%s", header=header)
+
+
     def set_model_fit_params(self, ref_data, mov_data):
         """
         Set the model parameter given the input data used for the fit.
@@ -23,6 +137,7 @@ class QuickCombatClassic(QuickCombat):
         """
         super().set_model_fit_params(ref_data, mov_data)
         self.model_params["name"] = "classic"
+
 
     def standardize_moving_data(self, X, Y):
         """
@@ -39,11 +154,12 @@ class QuickCombatClassic(QuickCombat):
         """
         s_y = []
         for i in range(len(X)):
-            covariate_effect = np.dot(X[i][1:, :].transpose(), self.beta_mov[i])
+            covariate_effect = np.dot(X[i][1:, :].transpose(), self.beta[i])
             s_y.append(
-                (Y[i] - self.alpha_mov[i] - covariate_effect) / self.sigma_mov[i]
+                (Y[i] - self.alpha[i] - covariate_effect) / self.sigma[i]
             )
         return s_y
+
 
     def fit(self, ref_data, mov_data):
         """
@@ -63,17 +179,9 @@ class QuickCombatClassic(QuickCombat):
         design_mov, y_mov = self.get_design_matrices(mov_data)
         design_ref, y_ref = self.get_design_matrices(ref_data)
         design_all, y_all = self.get_design_matrices(all_data)
-        self.alpha_mov, self.beta_mov = QuickCombat.get_alpha_beta(design_all, y_all)
-        self.sigma_mov = QuickCombat.get_sigma(
-            design_all,
-            y_all,
-            self.alpha_mov,
-            self.beta_mov,
-        )
-        self.sigma_ref = self.sigma_mov
-        self.alpha_ref = self.alpha_mov
-        self.beta_ref = self.beta_mov
-
+        self.alpha, self.beta = QuickCombat.get_alpha_beta(design_all, y_all)
+        self.sigma = QuickCombat.get_sigma(design_all, y_all, self.alpha, self.beta)
+        
         z = self.standardize_moving_data(design_mov, y_mov)
         self.gamma_mov = np.array([np.mean(x) for x in z])
         self.delta_mov = np.array([np.var(x, ddof=1) for x in z])
@@ -84,12 +192,12 @@ class QuickCombatClassic(QuickCombat):
                 self.gamma_mov,
                 self.delta_mov,
             )
-        self.gamma_mov *= self.sigma_mov
+        self.gamma_mov *= self.sigma
         
         z_ref = self.standardize_moving_data(design_ref, y_ref)
         self.gamma_ref = np.array([np.mean(x) for x in z_ref])
         self.delta_ref = np.array([np.var(x, ddof=1) for x in z_ref])
-        self.gamma_ref *= self.sigma_mov
+        self.gamma_ref *= self.sigma
         
         self.set_model_fit_params(ref_data, mov_data)
         return
@@ -108,14 +216,11 @@ class QuickCombatClassic(QuickCombat):
             Harmonized data values.
         """
         if (
-            self.alpha_ref is None
-            or self.beta_ref is None
-            or self.sigma_ref is None
+            self.alpha is None
+            or self.beta is None
+            or self.sigma is None
             or self.gamma_ref is None
             or self.delta_ref is None
-            or self.alpha_mov is None
-            or self.beta_mov is None
-            or self.sigma_mov is None
             or self.gamma_mov is None
             or self.delta_mov is None
         ):
@@ -126,15 +231,58 @@ class QuickCombatClassic(QuickCombat):
 
         for i in range(len(design)):
             covariate_effect = np.dot(
-                design[i][1:, :].transpose(), self.beta_mov[i]
+                design[i][1:, :].transpose(), self.beta[i]
             )
 
             harm_y.append(
                 (self.delta_ref[i] / self.delta_mov[i]) 
-                * (Y[i] - self.alpha_mov[i] - covariate_effect - self.gamma_mov[i])
+                * (Y[i] - self.alpha[i] - covariate_effect - self.gamma_mov[i])
                 + self.gamma_ref[i]
-                + self.alpha_mov[i]              
+                + self.alpha[i]              
                 + covariate_effect
             )
             
         return harm_y
+
+
+    def predict(self, ages, bundle, moving_site=True):
+        """
+        Use the model to predict values.
+
+        ages: array
+            Age use to do the prediction.
+
+        bundle: str
+            Bundle to use.
+
+        Returns
+        -------
+        y: array
+            Model-predicted value for the input ages.
+        """
+
+        design = []
+        design.append(np.ones(len(ages)))  # intercept
+
+        if not self.ignore_sex_covariate:
+            design.append(np.ones(len(ages)) * 0.5)
+
+        if not self.ignore_handedness_covariate:
+            design.append(np.ones(len(ages)) * 0.5)
+
+        # Elevate to a polynomial of degree the age data
+        for degree in np.arange(1, self.degree + 1):
+            design.append(ages**degree)
+
+        design = np.array(design)
+
+        idx = list(self.bundle_names).index(bundle)
+
+        # There is single alpha/beta
+        if moving_site:
+            B = np.hstack([self.alpha[idx], self.beta[idx]])
+        else:
+            B = np.hstack([self.alpha[idx], self.beta[idx]])
+
+        y = np.dot(design.transpose(), B)
+        return y
