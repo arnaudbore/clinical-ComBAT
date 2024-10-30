@@ -107,7 +107,7 @@ def main():
     all_data = pd.read_csv(args.in_file)
 
     if args.HC:
-        all_data = data.query("disease == 'HC'")
+        all_data = all_data.query("disease == 'HC'")
 
     if args.nbr_sub > 0:
         all_sids = list(all_data.sid.unique())
