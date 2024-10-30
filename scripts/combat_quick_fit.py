@@ -89,9 +89,15 @@ def _build_arg_parser():
     )
     p.add_argument(
         "--robust",
-        action="store_true",
+        default="No",
+        choices=["No", "IQR"],
         help="If set, use combat robust. This tries "
         + "identifying/rejecting non-HC subjects.",
+    )
+    p.add_argument(
+        "--rwp",
+        action="store_true",
+        help="Will remove whole patient if is outlierin one bundle",
     )
     p.add_argument(
         "--regul_ref",
@@ -195,10 +201,10 @@ def main():
         nu=args.nu,
         tau=args.tau,
     )
-    if args.robust:
+    if args.robust != 'No':
         remove_outliers(ref_data, mov_data, args)
 
-    QC.fit(ref_data, mov_data)
+    QC.fit(ref_data, mov_data, False)
 
     logging.info("Saving file: %s", output_filename)
     QC.save_model(output_filename)

@@ -211,6 +211,7 @@ class QuickCombat(QuickHarmonizationMethod):
             ref_data = ref_data.query("age >= @min_age & age <= @max_age")
 
         if HC_only:
+            print('PROBLEMMMMMMMM')
             mov_data = mov_data.query("disease == 'HC'")
 
         self.bundle_names = np.intersect1d(

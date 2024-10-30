@@ -5,9 +5,13 @@ import matplotlib
 import seaborn as sns
 import pandas as pd
 from sklearn.metrics import precision_score, recall_score, confusion_matrix, f1_score
-REMOVE_WHOLE_PATIENT = True
+
 
 def remove_outliers(ref_data, mov_data, args):
+
+    find_outlier = ROBUST_METHODS.get(args.robust)
+
+    rwp = args.rwp
     QC = from_model_name(
         args.method.lower(),
         ignore_handedness_covariate=args.ignore_handedness,
@@ -31,11 +35,11 @@ def remove_outliers(ref_data, mov_data, args):
     for i, bundle in enumerate(QC.bundle_names):
         data = mov_data.query("bundle == @bundle")
 
-        outliers_idx += find_outliers_IQR(data)
+        outliers_idx += find_outlier(data)
 
     QC.metrics = get_metrics(outliers_idx, mov_data)
 
-    if REMOVE_WHOLE_PATIENT:
+    if rwp:
         outlier_patients_ids = mov_data.loc[outliers_idx]['sid'].unique().tolist()
         mov_data = mov_data[~mov_data['sid'].isin(outlier_patients_ids)]
     else :
@@ -145,3 +149,7 @@ def find_outliers_IQR(data):
     outliers = data[(data['mean_no_cov'] < lower_bound) | (data['mean_no_cov'] > upper_bound)]
 
     return outliers.index.to_list()
+
+ROBUST_METHODS = {
+    "IQR": find_outliers_IQR
+}
