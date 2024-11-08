@@ -3,12 +3,14 @@ __pycache__/
 *$py.class
 **/__pycache__/
 
+RAW
 ADNI_CLEAN
 ADNI_MODELS
 ADNI_RAW
 ADNI_BEST
 ADNI_BEST_CLEAN
 ADNI_BEST_VIZUALIZE
+ROBUST
 168Viz
 compilation_viz
 DONNES

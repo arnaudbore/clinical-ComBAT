@@ -88,18 +88,6 @@ def _build_arg_parser():
         help="If set, skip empirical Bayes estimator for alpha and sigma estimation.",
     )
     p.add_argument(
-        "--robust",
-        default="No",
-        choices=["No", "IQR"],
-        help="If set, use combat robust. This tries "
-        + "identifying/rejecting non-HC subjects.",
-    )
-    p.add_argument(
-        "--rwp",
-        action="store_true",
-        help="Will remove whole patient if is outlierin one bundle",
-    )
-    p.add_argument(
         "--regul_ref",
         type=float,
         default=0,
@@ -130,6 +118,23 @@ def _build_arg_parser():
         default=2,
         help="Combat Clinic hyperparameter for the covariate fit of the moving site data. "
         "It must be >= 1. [%(default)s]",
+    )
+    p.add_argument(
+        "--hc",
+        action="store_true",
+        help="Will keep only HC subjects in the data.",
+    )
+    p.add_argument(
+        "--robust",
+        default="No",
+        choices=["No", "IQR"],
+        help="If set, use combat robust. This tries "
+        + "identifying/rejecting non-HC subjects.",
+    )
+    p.add_argument(
+        "--rwp",
+        action="store_true",
+        help="Will remove whole patient if is outlierin one bundle",
     )
 
     add_verbose_arg(p)
@@ -202,9 +207,9 @@ def main():
         tau=args.tau,
     )
     if args.robust != 'No':
-        remove_outliers(ref_data, mov_data, args)
+        mov_data = remove_outliers(ref_data, mov_data, args)
 
-    QC.fit(ref_data, mov_data, False)
+    QC.fit(ref_data, mov_data, args.hc)
 
     logging.info("Saving file: %s", output_filename)
     QC.save_model(output_filename)

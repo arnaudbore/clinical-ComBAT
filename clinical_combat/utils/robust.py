@@ -5,13 +5,16 @@ import matplotlib
 import seaborn as sns
 import pandas as pd
 from sklearn.metrics import precision_score, recall_score, confusion_matrix, f1_score
+import json
+import os
 
 
 def remove_outliers(ref_data, mov_data, args):
 
     find_outlier = ROBUST_METHODS.get(args.robust)
-
     rwp = args.rwp
+
+    # Initialize QC model
     QC = from_model_name(
         args.method.lower(),
         ignore_handedness_covariate=args.ignore_handedness,
@@ -24,68 +27,55 @@ def remove_outliers(ref_data, mov_data, args):
         nu=args.nu,
         tau=args.tau,
     )
-    QC.fit(ref_data, mov_data,False)
-    
+    QC.fit(ref_data, mov_data, False)
+
+    # Process movement data
     design_mov, y_mov = QC.get_design_matrices(mov_data)
     y_no_cov = QC.remove_covariate_effect(design_mov, y_mov)
     y_no_cov_flat = np.array(y_no_cov).flatten()
-    
-    mov_data.insert(3,"mean_no_cov", y_no_cov_flat,True)
-    outliers_idx = []
-    for i, bundle in enumerate(QC.bundle_names):
-        data = mov_data.query("bundle == @bundle")
+    mov_data.insert(3, "mean_no_cov", y_no_cov_flat, True)
 
+    # Find outliers
+    outliers_idx = []
+    for bundle in QC.bundle_names:
+        data = mov_data.query("bundle == @bundle")
         outliers_idx += find_outlier(data)
 
-    QC.metrics = get_metrics(outliers_idx, mov_data)
+    mov_data = mov_data.drop(columns=['mean_no_cov'])
+    # Calculate and save metrics
+    metrics = get_metrics(outliers_idx, mov_data)
+    rwp_str = "RWP" if rwp else "NoRWP"
+    site = mov_data['site'].unique()[0]
+    metrics_filename = os.path.join(args.out_dir,f"metrics_{site}_{args.robust}_{rwp_str}.json")
+    metrics = {k: (int(v) if isinstance(v, np.integer) else v) for k, v in metrics.items()}
+    with open(metrics_filename, 'w') as json_file:
+        json.dump(metrics, json_file)
 
+    # Save outliers
+    outliers_filename = os.path.join(args.out_dir,f"outliers_{site}_{args.robust}_{rwp_str}.csv")
+    mov_data.loc[outliers_idx].to_csv(outliers_filename, index=True)
+
+    # Vérification des données sauvegardées
+    with open(metrics_filename, 'r') as json_file:
+        loaded_metrics = json.load(json_file)
+
+    # Chargement des outliers avec les index correctement
+    loaded_outliers_df = pd.read_csv(outliers_filename, index_col=0)
+
+
+    if metrics == loaded_metrics and mov_data.loc[outliers_idx].equals(loaded_outliers_df):
+        print("Test OK: The metrics and outliers match.")
+    else:
+        print("Test Failed: The metrics and outliers do not match.")
+
+    # Remove outliers from movement data
     if rwp:
         outlier_patients_ids = mov_data.loc[outliers_idx]['sid'].unique().tolist()
         mov_data = mov_data[~mov_data['sid'].isin(outlier_patients_ids)]
-    else :
+    else:
         mov_data = mov_data.drop(outliers_idx)
-
-    mov_data = mov_data.drop(columns=['mean_no_cov'])
     return mov_data
 
-def create_plots(mov_data, QC):
-    foldername = f"PLOTS/{mov_data['site'].unique()[0]}/"
-    mov_data_HC = mov_data.query("disease == 'HC'")
-    mov_data_SICK = mov_data.query("disease != 'HC'")
-    
-    design_mov, y_mov = QC.get_design_matrices(mov_data)
-    y_no_cov = QC.remove_covariate_effect(design_mov, y_mov)
-
-    design_mov_HC, y_mov_HC = QC.get_design_matrices(mov_data_HC)
-    y_no_cov_HC = QC.remove_covariate_effect(design_mov_HC, y_mov_HC)
-
-    design_mov_SICK, y_mov_SICK = QC.get_design_matrices(mov_data_SICK)
-    y_no_cov_SICK = QC.remove_covariate_effect(design_mov_SICK, y_mov_SICK)
-
-    plt.scatter(design_mov_HC[0][3], y_no_cov_HC[0],color='blue')
-    plt.scatter(design_mov_SICK[0][3], y_no_cov_SICK[0],color='red')
-    plt.savefig(foldername+"no_cov.png")
-    plt.clf()
-    plt.scatter(design_mov_HC[0][3], y_mov_HC[0],color='blue')
-    plt.scatter(design_mov_SICK[0][3], y_mov_SICK[0],color='red')
-    plt.savefig(foldername+"yes_cov.png")
-    plt.clf()
-    plot = sns.distplot(y_no_cov[0])
-    fig = plot.get_figure()
-    fig.savefig(foldername + "distribution.png") 
-    plt.clf()
-
-
-    plt.scatter(design_mov_HC[0][3], y_no_cov_HC[0])
-    plt.savefig(foldername + "no_cov_HC.png")
-    plt.clf()
-    plt.scatter(design_mov_HC[0][3], y_mov_HC[0])
-    plt.savefig(foldername +"yes_cov_HC.png")
-    plt.clf()
-    plot = sns.distplot(y_no_cov_HC[0])
-    fig = plot.get_figure()
-    fig.savefig(foldername + "distribution_HC.png") 
-    plt.clf()
 
 def get_metrics(outliers_idx, mov_data):
 
@@ -126,14 +116,11 @@ def get_metrics(outliers_idx, mov_data):
         'precision': precision,
         'recall': recall,
         'taux_faux_positifs': taux_faux_positifs,
-        'f1_score': f1,
-        'outliers': outliers
+        'f1_score': f1
         
     }
 
     return metrics
-    
-
 
 
 def find_outliers_IQR(data):
@@ -153,3 +140,42 @@ def find_outliers_IQR(data):
 ROBUST_METHODS = {
     "IQR": find_outliers_IQR
 }
+
+def create_plots(mov_data, QC):
+    foldername = f"PLOTS/{mov_data['site'].unique()[0]}/"
+    mov_data_HC = mov_data.query("disease == 'HC'")
+    mov_data_SICK = mov_data.query("disease != 'HC'")
+    
+    design_mov, y_mov = QC.get_design_matrices(mov_data)
+    y_no_cov = QC.remove_covariate_effect(design_mov, y_mov)
+
+    design_mov_HC, y_mov_HC = QC.get_design_matrices(mov_data_HC)
+    y_no_cov_HC = QC.remove_covariate_effect(design_mov_HC, y_mov_HC)
+
+    design_mov_SICK, y_mov_SICK = QC.get_design_matrices(mov_data_SICK)
+    y_no_cov_SICK = QC.remove_covariate_effect(design_mov_SICK, y_mov_SICK)
+
+    plt.scatter(design_mov_HC[0][3], y_no_cov_HC[0],color='blue')
+    plt.scatter(design_mov_SICK[0][3], y_no_cov_SICK[0],color='red')
+    plt.savefig(foldername+"no_cov.png")
+    plt.clf()
+    plt.scatter(design_mov_HC[0][3], y_mov_HC[0],color='blue')
+    plt.scatter(design_mov_SICK[0][3], y_mov_SICK[0],color='red')
+    plt.savefig(foldername+"yes_cov.png")
+    plt.clf()
+    plot = sns.distplot(y_no_cov[0])
+    fig = plot.get_figure()
+    fig.savefig(foldername + "distribution.png") 
+    plt.clf()
+
+
+    plt.scatter(design_mov_HC[0][3], y_no_cov_HC[0])
+    plt.savefig(foldername + "no_cov_HC.png")
+    plt.clf()
+    plt.scatter(design_mov_HC[0][3], y_mov_HC[0])
+    plt.savefig(foldername +"yes_cov_HC.png")
+    plt.clf()
+    plot = sns.distplot(y_no_cov_HC[0])
+    fig = plot.get_figure()
+    fig.savefig(foldername + "distribution_HC.png") 
+    plt.clf()

@@ -79,7 +79,7 @@ def make_best(mov_data_file, model):
         QC.model_params["name"],
         model,
     )
-def apply(mov_data_file, model,out_dir):
+def apply(mov_data_file, model,output_filename):
 
     QC = from_model_filename(model)
 
@@ -100,16 +100,6 @@ def apply(mov_data_file, model,out_dir):
 
     y_harm = QC.apply(mov_data)
 
-    output_filename = os.path.join(
-        out_dir,
-        str(mov_site)
-        + "."
-        + metric_name
-        + "."
-        + QC.model_params["name"]
-        + ".csv.gz",
-    )
-
     save_quickcombat_data_to_csv(
         mov_data,
         y_harm,
@@ -119,6 +109,7 @@ def apply(mov_data_file, model,out_dir):
         model,
         output_filename,
     )
+    return y_harm
 
 def main():
     parser = _build_arg_parser()
