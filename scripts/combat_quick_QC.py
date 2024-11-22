@@ -125,7 +125,7 @@ def QC(ref_data_file,mov_data_file,model_file, ignore_bundles=['left_ventricle',
         "      Mean Bhattacharrya distance: %f (min: %f, max: %f)"
         % (np.mean(dists), np.min(dists), np.max(dists))
     )
-    return dists
+    return dists , QC.bundle_names
 
 def main():
     parser = _build_arg_parser()
