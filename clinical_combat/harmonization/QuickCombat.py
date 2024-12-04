@@ -130,7 +130,7 @@ class QuickCombat(QuickHarmonizationMethod):
         """
         return np.mean(self.get_bundles_bhattacharyya_distance(ref_data, mov_data))
 
-    def get_bundles_bhattacharyya_distance(self, ref_data, mov_data):
+    def get_bundles_bhattacharyya_distance(self, ref_data, mov_data, HC_only=True):
         """
         Returns the Bhattacharyya distance for all bundles.
 
@@ -143,11 +143,11 @@ class QuickCombat(QuickHarmonizationMethod):
         dists = []
         for bundle in self.bundle_names:
             dists.append(
-                self.get_bundle_bhattacharyya_distance(ref_data, mov_data, bundle)
+                self.get_bundle_bhattacharyya_distance(ref_data, mov_data, bundle, HC_only)
             )
         return dists
 
-    def get_bundle_bhattacharyya_distance(self, ref_data, mov_data, bundle_name):
+    def get_bundle_bhattacharyya_distance(self, ref_data, mov_data, bundle_name, HC_only=True):
         """
         Returns the Bhattacharyya distance for one bundle.
 
@@ -163,7 +163,7 @@ class QuickCombat(QuickHarmonizationMethod):
         """
 
         bundle_idx = list(self.bundle_names).index(bundle_name)
-        ref_data, mov_data = self.prepare_data(ref_data, mov_data)
+        ref_data, mov_data = self.prepare_data(ref_data, mov_data, HC_only)
 
         design_ref, y_ref = self.get_design_matrices(ref_data)
 

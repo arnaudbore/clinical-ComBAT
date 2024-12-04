@@ -7,6 +7,7 @@ import pandas as pd
 from sklearn.metrics import precision_score, recall_score, confusion_matrix, f1_score
 import json
 import os
+from scipy.spatial.distance import euclidean
 
 
 def remove_outliers(ref_data, mov_data, args):
@@ -29,12 +30,20 @@ def remove_outliers(ref_data, mov_data, args):
         tau=args.tau,
     )
     QC.fit(ref_data, mov_data, False)
+    site = mov_data['site'].unique()[0]
+    rwp_str = "RWP" if rwp else "NoRWP"
 
     # Process movement data
     design_mov, y_mov = QC.get_design_matrices(mov_data)
     y_no_cov = QC.remove_covariate_effect(design_mov, y_mov)
     y_no_cov_flat = np.array(y_no_cov).flatten()
     mov_data.insert(3, "mean_no_cov", y_no_cov_flat, True)
+
+    properties_df = get_distribution_properties(mov_data,args)
+    properties_df['site'] = site
+    properties_filename = os.path.join(args.out_dir,f"properties_{site}_{args.robust}_{rwp_str}.csv")
+    properties_df.to_csv(properties_filename, index=False)
+
 
     # Find outliers
     outliers_idx = []
@@ -43,16 +52,13 @@ def remove_outliers(ref_data, mov_data, args):
         outliers_idx += find_outlier(data)
 
     # Calculate and save metrics
-    site = mov_data['site'].unique()[0]
     metrics = get_metrics(outliers_idx, mov_data)
     metrics['site'] = site
 
     mov_data = mov_data.drop(columns=['mean_no_cov'])
 
-
-    rwp_str = "RWP" if rwp else "NoRWP"
     metrics_filename = os.path.join(args.out_dir,f"metrics_{site}_{args.robust}_{rwp_str}.csv")
-    metrics.to_csv(metrics_filename, index=True)
+    metrics.to_csv(metrics_filename, index=False)
 
     # Save outliers
     outliers_filename = os.path.join(args.out_dir,f"outliers_{site}_{args.robust}_{rwp_str}.csv")
@@ -71,6 +77,48 @@ def remove_outliers(ref_data, mov_data, args):
         mov_data = mov_data.drop(outliers_idx)
     return mov_data
 
+
+def get_distribution_properties(mov_data,args):
+
+    QC_bat = from_model_name(
+        "clinic",
+        ignore_handedness_covariate=args.ignore_handedness,
+        ignore_sex_covariate=args.ignore_sex,
+        use_empirical_bayes=False,
+        limit_age_range=False,
+        degree=2,
+        regul_ref=0,
+        regul_mov=0,
+        nu=0,
+        tau=2,
+    )
+    QC_bat.fit(mov_data, mov_data)
+
+    
+    mov_data_HC = mov_data.query("disease == 'HC'")
+    mov_data_SICK = mov_data.query("disease != 'HC'")
+    dists =QC_bat.get_bundles_bhattacharyya_distance(mov_data_HC, mov_data_SICK, False)
+    skewness_per_bundle = {}
+    mean_median_shift_per_bundle = {}
+    kurtosis_per_bundle = {}
+
+    for bundle in QC_bat.bundle_names:
+        bundle_data = mov_data[mov_data['bundle'] == bundle]
+        skewness_per_bundle[bundle] = bundle_data['mean_no_cov'].skew()
+        mean_median_shift_per_bundle[bundle] = np.abs(bundle_data['mean_no_cov'].mean() - bundle_data['mean_no_cov'].median())/bundle_data['mean_no_cov'].mean()
+        kurtosis_per_bundle[bundle] = bundle_data['mean_no_cov'].kurtosis()
+    
+    # Create DataFrame with bundles as columns
+    bundles = mov_data['bundle'].unique()
+    df = pd.DataFrame(index=['dists', 'skewness', 'mean_median_shift', 'kurtosis'], columns=bundles)
+
+    # Populate DataFrame
+    for bundle in QC_bat.bundle_names:
+        df.at['dists', bundle] = dists[mov_data['bundle'].unique().tolist().index(bundle)]
+        df.at['skewness', bundle] = skewness_per_bundle[bundle]
+        df.at['mean_median_shift', bundle] = mean_median_shift_per_bundle[bundle]
+        df.at['kurtosis', bundle] = kurtosis_per_bundle[bundle]
+    return df.reset_index().rename(columns={'index': 'property'})
 
 def get_metrics(outliers_idx, mov_data):
     
@@ -132,49 +180,9 @@ def get_metrics(outliers_idx, mov_data):
     metrics_df = pd.DataFrame(metrics_list)
     metrics_df.set_index('bundle', inplace=True)
     metrics_df = metrics_df.sort_index(axis=1)
-    return metrics_df.T
-
-    # mov_data['is_malade'] = mov_data['disease'].apply(lambda x: 0 if x == 'HC' else 1)
-    # outliers = mov_data.loc[outliers_idx]
-    # outliers_sid = outliers['sid'].unique().tolist() 
-
-
-    # mov_data['is_outlier'] = mov_data['sid'].apply(lambda x: 1 if x in outliers_sid else 0)
-
-    # patients = mov_data.drop_duplicates(subset='sid')
-
-    # y_true = patients['is_malade'].tolist()
-    
-    # y_pred = patients['is_outlier'].tolist()
-
-    # # Calcul de la matrice de confusion pour obtenir les faux positifs et faux négatifs
-    # tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
-
-    # # Calcul de la précision et du rappel (recall)
-    # precision = precision_score(y_true, y_pred)
-    # recall = recall_score(y_true, y_pred)
-    # taux_faux_positifs = fp / (fp + tn) if (fp + tn) != 0 else 0
-    # f1 = f1_score(y_true, y_pred)
-
-    # # Affichage des résultats
-    # print(f"Précision : {tp} / {tp+fp} = {precision:.3f}")
-    # print(f"Rappel (Recall) :{tp} / {tp+fn} = {recall:.3f}")
-    # print(f"Taux de faux positifs : {fp} / {fp+tn} = {taux_faux_positifs:.3f}")
-    # print(f"F1 score : {f1:.3f}")
-    
-    # metrics = [{
-    #     'true_positives': tp,
-    #     'false_positives': fp,
-    #     'true_negatives': tn,
-    #     'false_negatives': fn,
-    #     'precision': precision,
-    #     'recall': recall,
-    #     'taux_faux_positifs': taux_faux_positifs,
-    #     'f1_score': f1
-        
-    # }]
-
-    # return pd.DataFrame(metrics)
+    metrics_df = metrics_df.T.reset_index()
+    metrics_df.rename(columns={'index': 'metric'}, inplace=True)
+    return metrics_df
 
 
 def find_outliers_IQR(data):
