@@ -60,7 +60,7 @@ def find_outliers_mad(data, args):
 
     return outliers.index.to_list()
 
-def reject_outliers_until_mad_equals_mean(data):
+def reject_outliers_until_mad_equals_mean(data, args):
     column = 'mean_no_cov'
     while True:
         median = data[column].median()

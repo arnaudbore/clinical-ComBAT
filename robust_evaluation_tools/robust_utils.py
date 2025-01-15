@@ -9,6 +9,7 @@ from scripts import combat_info
 
 from clinical_combat.harmonization.QuickCombat import QuickCombat
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 # Compare if two DataFrames have the same values in the 'sid' column
@@ -25,7 +26,12 @@ def get_bundles(mov_data_file):
 
 def get_info(mov_data_file):
     [df,bundles] = combat_info.info(mov_data_file)
-    nb_hc = int(re.findall('HC\(n=(\d+)',df["DetailInfos"]["Disease"])[0])
+    reg = re.findall('HC\(n=(\d+)',df["DetailInfos"]["Disease"])
+    if  reg == []:
+        nb_hc = 0
+    else:
+        nb_hc = int(reg[0])
+
     nb_total = df["DetailInfos"]["Number of Subject"]
     nb_sick = nb_total - nb_hc
     return [nb_total,nb_hc,nb_sick]
@@ -38,7 +44,7 @@ def rwp_text(x):
 
 def get_site(mov_data_file):
     mov_data = pd.read_csv(mov_data_file)
-    return mov_data.site.unique()[0]
+    return str(mov_data.site.unique()[0])
 
 def add_nb_patients_and_diseased(df):
   df['num_patients'] = df['site'].str.extract(r'(\d+)_patients')[0].astype(int)
@@ -59,7 +65,7 @@ def scatter(df1,df2, title, bundle='mni_MCP'):
     plt.legend()
     plt.show()
 
-def get_complete_combination(folder_path, file_pattern='adni_compilation*.csv.gz'):
+def get_complete_combination(folder_path, file_pattern='adni_compilation*.csv.gz', include_CamCAN=False ,is_CamCAN=False):
     # Define the folder path and the pattern to match files
     file_pattern_path = os.path.join(folder_path, file_pattern)
 
@@ -72,6 +78,17 @@ def get_complete_combination(folder_path, file_pattern='adni_compilation*.csv.gz
     # Loop through the file list and read each file
     for file in file_list:
         df = pd.read_csv(file)
+        if include_CamCAN:
+            metric = df['metric'].unique()[0]
+            CamCAN_file = os.path.join('DONNES','CamCAN', f'CamCAN.{metric}.raw.csv.gz')
+            df = pd.concat([df, pd.read_csv(CamCAN_file)])
+        if is_CamCAN: # CamCAN has a different naming convention
+            df['site'] = 'CamCAN_compilation'
+        else:
+            df['old_site'] = df['site']
+            disease = df['disease'].unique()
+            disease = disease[disease != 'HC'][0]
+            df['site'] = f'{disease}_compilation'
         df = remove_covariates_effects(df)
         df_list.append(df)
 
@@ -82,7 +99,7 @@ def get_complete_combination(folder_path, file_pattern='adni_compilation*.csv.gz
     return df_combined
 
 
-def get_design_matrices(df):
+def get_design_matrices(df, ignore_handedness=False):
     design = []
     Y = []
     for bundle in list(np.unique(df["bundle"])):
@@ -90,7 +107,8 @@ def get_design_matrices(df):
         hstack_list = []
         hstack_list.append(np.ones(len(data["sid"])))  # intercept
         hstack_list.append(QuickCombat.to_category(data["sex"]))
-        hstack_list.append(QuickCombat.to_category(data["handedness"]))
+        if not ignore_handedness:
+            hstack_list.append(QuickCombat.to_category(data["handedness"]))
         ages = data["age"].to_numpy()
         hstack_list.append(ages)
         design.append(np.array(hstack_list))
@@ -99,7 +117,10 @@ def get_design_matrices(df):
 
 def remove_covariates_effects(df):
     df = df.sort_values(by=["site", "sid", "bundle"])
-    design, y = get_design_matrices(df)
+    ignore_handedness = False
+    if df['handedness'].nunique() == 1:
+        ignore_handedness = True
+    design, y = get_design_matrices(df, ignore_handedness)
     alpha, beta = QuickCombat.get_alpha_beta(design, y)
 
     df['mean_no_cov'] = df['mean']
@@ -129,3 +150,16 @@ def transform_into_matrix(df):
 
     # Résultat
     print(df_pivot)
+
+def show_scatter_plot(df, column, bundle):
+    actual = df[df['bundle'] == bundle]
+    disease = df['disease'].unique()
+    metric = df['metric'].unique()[0]
+    disease = disease[disease != 'HC'][0]
+    plt.clf()
+    sns.scatterplot(data=actual, x='age', y=column, hue='disease', palette={'HC': 'blue', disease: 'red'})
+    plt.title(f'Scatter plot of {disease} in metric {metric} for bundle: {bundle}')
+    plt.xlabel('age')
+    plt.ylabel(column)
+    plt.legend()
+    plt.show()

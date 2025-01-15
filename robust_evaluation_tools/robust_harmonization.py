@@ -47,7 +47,7 @@ def fit(mov_data_file, ref_data_file, metric, harmonizartion_method, robust, rwp
     if hc: 
         cmd += ' --hc'
     subprocess.call(cmd, shell=True)
-    return output_model_filename
+    return os.path.join(directory,output_model_filename)
 
 def apply(mov_data_file, model_filename, metric, harmonizartion_method, robust, rwp, directory):
     output_filename = os.path.join(
@@ -186,3 +186,20 @@ def compare_distances(directory, site, hc_dists, no_robust_dists, robust_dists, 
     results_df = pd.DataFrame(results)
     results_df.to_csv(os.path.join(directory, f"{site}_comparison_results.csv"), index=False)
     return results_df
+
+
+def get_csv_res(mov_data_file, directory, harmonizartion_method,metric):
+    mov_data = pd.read_csv(mov_data_file)
+    model = (
+            directory
+            +
+            '/'
+            +
+            mov_data.site.unique()[0]
+            + "."
+            + metric
+            + "."
+            + harmonizartion_method
+            + ".model.csv"
+        )
+    return combat_quick_apply.make_best(mov_data_file, model)
