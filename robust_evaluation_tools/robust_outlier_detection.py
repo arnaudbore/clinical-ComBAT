@@ -62,20 +62,22 @@ def find_outliers_mad(data, args):
 
 def reject_outliers_until_mad_equals_mean(data, args):
     column = 'mean_no_cov'
+    outliers_idx = []
     while True:
         median = data[column].median()
-        mad = np.median(np.abs(data[column] - median))
         mean = data[column].mean()
 
-        if mad >= mean:
+        if abs(median - mean)/median < 0.1:
             break
 
         # Find the index of the maximum value
         max_idx = data[column].idxmax()
+        # Add the index to the outliers list
+        outliers_idx.append(max_idx)
         # Drop the row with the maximum value
         data = data.drop(max_idx)
 
-    return data.index.to_list()
+    return outliers_idx
 
 
 def get_metrics(outliers_idx, mov_data):

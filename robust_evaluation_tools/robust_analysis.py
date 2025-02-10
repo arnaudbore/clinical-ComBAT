@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np 
 import os
 
 def calculate_precision_by_bundle(metrics_compilation_df):
@@ -59,3 +60,26 @@ def count_bundles_per_outliers(df):
 # Example usage
 #bundles_per_outliers = count_bundles_per_outliers(pd.read_csv(os.path.join(MAINFOLDER, robust_method, "outliers_compilation.csv")))
 #bundles_per_outliers.head(10)
+
+def get_distribution_properties(mov_data):
+    
+    skewness_per_bundle = {}
+    mean_median_shift_per_bundle = {}
+    kurtosis_per_bundle = {}
+
+    for bundle in mov_data['bundle'].unique():
+        bundle_data = mov_data[mov_data['bundle'] == bundle]
+        skewness_per_bundle[bundle] = bundle_data['mean_no_cov'].skew()
+        mean_median_shift_per_bundle[bundle] = np.abs(bundle_data['mean_no_cov'].mean() - bundle_data['mean_no_cov'].median())/bundle_data['mean_no_cov'].mean()
+        kurtosis_per_bundle[bundle] = bundle_data['mean_no_cov'].kurtosis()
+    
+    # Create DataFrame with bundles as columns
+    bundles = mov_data['bundle'].unique()
+    df = pd.DataFrame(index=['skewness', 'mean_median_shift', 'kurtosis'], columns=bundles)
+
+    # Populate DataFrame
+    for bundle in mov_data['bundle'].unique():
+        df.at['skewness', bundle] = skewness_per_bundle[bundle]
+        df.at['mean_median_shift', bundle] = mean_median_shift_per_bundle[bundle]
+        df.at['kurtosis', bundle] = kurtosis_per_bundle[bundle]
+    return df.reset_index().rename(columns={'index': 'property'})

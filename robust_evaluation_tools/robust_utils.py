@@ -46,6 +46,17 @@ def get_site(mov_data_file):
     mov_data = pd.read_csv(mov_data_file)
     return str(mov_data.site.unique()[0])
 
+def get_metric(mov_data_file):
+    mov_data = pd.read_csv(mov_data_file)
+    return str(mov_data.metric.unique()[0])
+
+def get_disease(mov_data_file):
+    mov_data = pd.read_csv(mov_data_file)
+    unique_diseases = mov_data['disease'].unique()
+    if len(unique_diseases) == 1 and unique_diseases[0] == 'HC':
+        return 'HC'
+    return next(d for d in unique_diseases if d != 'HC')
+
 def add_nb_patients_and_diseased(df):
   df['num_patients'] = df['site'].str.extract(r'(\d+)_patients')[0].astype(int)
   df['disease_ratio'] = df['site'].str.extract(r'(\d+)_percent')[0].astype(int)

@@ -66,7 +66,7 @@ def apply(mov_data_file, model_filename, metric, harmonizartion_method, robust, 
     combat_quick_apply.apply(mov_data_file, model_filename, output_filename)
     return output_filename
 
-def visualize_harmonization(f, new_f, ref_data_file, directory, all_bundles = False):
+def visualize_harmonization(f, new_f, ref_data_file, directory, bundles = ''):
     cmd = (
         "scripts/combat_visualize_harmonization.py"
         + " "
@@ -79,16 +79,45 @@ def visualize_harmonization(f, new_f, ref_data_file, directory, all_bundles = Fa
         + directory
         + " -f"
     )
-    if all_bundles:
-        cmd += " --bundles all"
+    if bundles != '':
+        cmd += f" --bundles {bundles}"
     subprocess.call(cmd, shell=True)
 
 def QC(ref_data, output_filename, output_model_filename):
     return combat_quick_QC.QC(ref_data, output_filename, output_model_filename)
     
-def compare_with_compilation(df, compilation_file):
+def compare_with_compilation(df):
+    compilation_df = get_compilation_df(df)
     # Charger le DataFrame COMPILATION
-    compilation_df = pd.read_csv(compilation_file)
+
+    # Filtrer les patients de COMPILATION qui sont dans df en utilisant les sid
+    common_sids = df['sid'].unique()
+    filtered_compilation_df = compilation_df[compilation_df['sid'].isin(common_sids)]
+
+    # Initialiser une liste pour stocker les résultats
+    comparison_df = pd.DataFrame()
+
+    # Comparer la différence absolue de la colonne mean par bundle
+    for bundle in df['bundle'].unique():
+        df_bundle = df[df['bundle'] == bundle]
+        compilation_bundle = filtered_compilation_df[filtered_compilation_df['bundle'] == bundle]
+        
+        # Fusionner les deux DataFrames sur les colonnes 'sid' et 'bundle'
+        merged_df = pd.merge(df_bundle, compilation_bundle, on=['sid', 'bundle'], suffixes=('_df', '_compilation'))
+        
+        # Calculer la différence absolue de la colonne mean
+        merged_df['abs_diff_mean'] = (merged_df['mean_df'] - merged_df['mean_compilation']).abs()
+        # Calculer la somme des différences absolues pour le bundle
+        comparison_df[bundle] = merged_df['abs_diff_mean']
+            
+    # Ajouter le site au DataFrame
+    mean_df = pd.DataFrame(comparison_df.mean()).transpose()
+
+    return mean_df
+
+def compare_with_camcan(df):
+    compilation_df = get_camcan_df(df)
+    # Charger le DataFrame COMPILATION
 
     # Filtrer les patients de COMPILATION qui sont dans df en utilisant les sid
     common_sids = df['sid'].unique()
@@ -203,3 +232,22 @@ def get_csv_res(mov_data_file, directory, harmonizartion_method,metric):
             + ".model.csv"
         )
     return combat_quick_apply.make_best(mov_data_file, model)
+
+
+def get_compilation_df(df):
+    disease = [d for d in df['disease'].unique() if d != 'HC'][0]
+    metric = df['metric'].unique()[0]
+
+    compilation_folder = os.path.join('DONNES', 'COMPILATIONS')
+    compilation_file = os.path.join(compilation_folder, f"{disease}_combination_all_metrics_CamCAN.csv.gz")
+    compilation_df = pd.read_csv(compilation_file, compression='gzip')
+    return compilation_df[compilation_df['metric'] == metric]
+
+
+def get_camcan_df(df):
+    metric = df['metric'].unique()[0]
+
+    compilation_folder = os.path.join('DONNES', 'CamCAN')
+    camcan_file = os.path.join(compilation_folder, f"CamCAN.{metric}.raw.csv.gz")
+    compilation_df = pd.read_csv(camcan_file, compression='gzip')
+    return compilation_df
