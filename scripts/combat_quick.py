@@ -231,7 +231,8 @@ def main():
         + " -v "
         + str(args.verbose)
     )
-    if args.regul_mov:
+
+    if args.regul_mov is not None:
         cmd += " --regul_mov " + str(args.regul_mov)
     if args.degree:
         cmd += " --degree " + str(args.degree)
@@ -338,7 +339,7 @@ def main():
         + os.path.join(args.out_dir, args.output_model_filename)
         + " -v "
         + str(args.verbose)
-        + " --degree_qc " 
+        + " --degree_qc "
         + str(args.degree_qc)
         + " --out_dir "
         + args.out_dir
@@ -360,7 +361,7 @@ def main():
         + os.path.join(args.out_dir, args.output_model_filename)
         + " -v "
         + str(args.verbose)
-        + " --degree_qc " 
+        + " --degree_qc "
         + str(args.degree_qc)
         + " --out_dir "
         + args.out_dir
