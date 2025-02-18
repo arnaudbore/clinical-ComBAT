@@ -119,7 +119,7 @@ class QuickCombatClinic(QuickCombat):
         self.bundle_names = params[0, 1:]
         self.alpha_ref = params[1, 1:].astype("float64").transpose()
         self.beta_ref = params[2 : 2 + nb, 1:].astype("float64").transpose()
-        self.sigma_ref = params[2 + nb, 1:].astype("float64").transpose()        
+        self.sigma_ref = params[2 + nb, 1:].astype("float64").transpose()
         self.alpha_mov = params[3 + nb, 1:].astype("float64").transpose()
         self.beta_mov = params[4 + nb : 4 + nb + nb, 1:].astype("float64").transpose()
         self.sigma_mov = params[4 + nb + nb, 1:].astype("float64").transpose()
@@ -187,8 +187,8 @@ class QuickCombatClinic(QuickCombat):
 
     def standardize_moving_data(self, X, Y):
         """
-        Standardize the data (Y). Combat Clinic standardize the moving site data with 
-        the moving site intercept. Because the data are harmonize to the reference site, 
+        Standardize the data (Y). Combat Clinic standardize the moving site data with
+        the moving site intercept. Because the data are harmonize to the reference site,
         sigma is obtained from the reference site data.
 
         .. math::
@@ -207,10 +207,10 @@ class QuickCombatClinic(QuickCombat):
             )
         return s_y
 
- 
+
     def fit(self, ref_data, mov_data):
         """
-        Combat Clinic fit. 
+        Combat Clinic fit.
         The moving site beta and alpha are fitted using the moving site data.
         The reference site alpha and beta is fitted using the reference site data.
 
@@ -419,4 +419,3 @@ class QuickCombatClinic(QuickCombat):
         return np.sum(evals)
 
 
- 

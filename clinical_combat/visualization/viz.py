@@ -4,7 +4,7 @@
 Dataframe computation and manipulation functions for viewing harmonization and raw data.
 
 Includes 3 dictionaries: color palette, linestyle palette and marker palette.
-Also includes a set of functions for manipulating dataframes (pandas) and computing a 
+Also includes a set of functions for manipulating dataframes (pandas) and computing a
 number of elements used by plots functions (plots.py).
 
 """
