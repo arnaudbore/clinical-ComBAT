@@ -65,7 +65,7 @@ def sample_patients(df, num_patients, disease_ratio,index):
     return sampled_df
 
 
-def generate_biaised_data(df1, df2, 
+def generate_biaised_data(df1, df2, fixed_bias=False,
                 additive_uniform_low=-3, additive_uniform_high=3, 
                 multiplicative_uniform_low=0.5, multiplicative_uniform_high=2, 
                 additive_std_low=0.01, additive_std_high=0.1, 
@@ -105,8 +105,12 @@ def generate_biaised_data(df1, df2,
     # Parcourir les valeurs uniques de la colonne sélectionnée
     for bundle in df1[bundle_column].unique():
         # Générer un biais additif et multiplicatif spécifique au metric_bundle
-        additive_bias_per_bundle[bundle] = np.random.normal(loc=additive_mean, scale=additive_std)
-        multiplicative_bias_per_bundle[bundle] = np.random.normal(loc=multiplicative_mean, scale=multiplicative_std)
+        if fixed_bias:
+            additive_bias_per_bundle[bundle] = 2
+            multiplicative_bias_per_bundle[bundle] = 1.5
+        else:
+            additive_bias_per_bundle[bundle] = np.random.normal(loc=additive_mean, scale=additive_std)
+            multiplicative_bias_per_bundle[bundle] = np.random.normal(loc=multiplicative_mean, scale=multiplicative_std)
 
     
     # Appliquer les biais indépendamment à df1 et df2 en utilisant les mêmes biais générés

@@ -1,12 +1,16 @@
 import numpy as np
 import pandas as pd
+import os
 from sklearn.metrics import precision_score, recall_score, confusion_matrix, f1_score
+
+from clinical_combat.utils.robust import find_outliers_IQR, find_outliers_MAD, reject_outliers_until_mad_equals_mean, find_outliers_VS, find_outliers_VS2, remove_top_x_percent, cheat
+
+import matplotlib.pyplot as plt
 
 def find_outliers(df, robust_method, args = []):
     # Find outliers
     outliers_idx = []
-
-    if robust_method in ['IQR', 'MAD', 'MAD_MEAN']:
+    if robust_method in ['IQR', 'MAD', 'MAD_MEAN', 'VS', 'VS2','TOP5', 'TOP10', 'TOP20', 'TOP30', 'TOP40', 'TOP50', 'CHEAT']:
         for metric in df['metric'].unique():
             for bundle in df['bundle'].unique():
                 data = df[(df['metric'] == metric) & (df['bundle'] == bundle)]
@@ -17,70 +21,24 @@ def find_outliers(df, robust_method, args = []):
 
 def use_robust_method(data, robust_method, args = []):
     if robust_method == 'IQR':
-        return find_outliers_iqr(data)
+        return find_outliers_IQR(data)
     elif robust_method == 'MAD':
-        return find_outliers_mad(data, args)
+        return find_outliers_MAD(data, args)
     elif robust_method == 'MAD_MEAN':
         return reject_outliers_until_mad_equals_mean(data, args)
+    elif robust_method == 'VS':
+        return find_outliers_VS(data)
+    elif robust_method == 'VS2':
+        return find_outliers_VS2(data)
+    elif robust_method in ['TOP5', 'TOP10', 'TOP20', 'TOP30', 'TOP40', 'TOP50']:
+        return remove_top_x_percent(data, x=int(robust_method
+        .replace('TOP', '')))
+    elif robust_method == 'CHEAT':
+        return cheat(data)
     else:
         raise ValueError("Invalid robust method. Choose between 'iqr' and 'mad'.")
-    
-def find_outliers_iqr(data, threshold=3.5):
-    Q1 = data['mean_no_cov'].quantile(0.25)
-    Q3 = data['mean_no_cov'].quantile(0.75)
-    IQR = Q3 - Q1
 
-    lower_bound = Q1 - 1.5 * IQR
-    upper_bound = Q3 + 1.5 * IQR
-
-    # Filtrer les valeurs aberrantes
-    outliers = data[(data['mean_no_cov'] < lower_bound) | (data['mean_no_cov'] > upper_bound)]
-
-    return outliers.index.to_list()
-
-def find_outliers_mad(data, args):
-    threshold = args[0] if len(args) == 1 else 3.5
-        
-    column='mean_no_cov'
-    # Calcul de la médiane de la colonne
-    median = data[column].median()
-
-    # Calcul du MAD
-    mad = np.median(np.abs(data[column] - median))
-
-    # Calcul des scores normalisés (distance modifiée)
-    if mad == 0:
-        print("MAD is zero, all values will appear as non-outliers.")
-        return []
-
-    modified_z_scores = 0.6745 * (data[column] - median) / mad
-
-    # Identification des indices des outliers
-    outliers = data[np.abs(modified_z_scores) > threshold]
-
-    return outliers.index.to_list()
-
-def reject_outliers_until_mad_equals_mean(data, args):
-    column = 'mean_no_cov'
-    outliers_idx = []
-    while True:
-        median = data[column].median()
-        mean = data[column].mean()
-
-        if abs(median - mean)/median < 0.1:
-            break
-
-        # Find the index of the maximum value
-        max_idx = data[column].idxmax()
-        # Add the index to the outliers list
-        outliers_idx.append(max_idx)
-        # Drop the row with the maximum value
-        data = data.drop(max_idx)
-
-    return outliers_idx
-
-
-def get_metrics(outliers_idx, mov_data):
+def analyze_detection_performance(outliers_idx, mov_data):
     
     metrics_list = []
     mov_data['is_malade'] = mov_data['disease'].apply(lambda x: 0 if x == 'HC' else 1)
@@ -146,3 +104,57 @@ def get_metrics(outliers_idx, mov_data):
     metrics_df['site'] = mov_data.site.unique()[0]
     return metrics_df
 
+
+def scatter_plot_with_colors(df, outliers_idx,  y_column, directory, file_path, title=None):
+    df['is_malade'] = df['disease'].apply(lambda x: 0 if x == 'HC' else 1)
+    df['is_outlier'] = 0
+    df.loc[outliers_idx, 'is_outlier'] = 1
+    colors = []
+    bundle_column = 'metric_bundle' if 'metric_bundle' in df.columns else 'bundle'
+    for bundle in df[bundle_column].unique():
+        bundle_data = df[df[bundle_column] == bundle]
+        colors = []
+        for _, row in bundle_data.iterrows():
+            if row['is_malade'] == 0 and row['is_outlier'] == 0:
+                colors.append('blue')
+            elif row['is_malade'] == 1 and row['is_outlier'] == 1:
+                colors.append('green')
+            elif row['is_outlier'] == 1 and row['is_malade'] == 0:
+                colors.append('red')
+            elif row['is_malade'] == 1 and row['is_outlier'] == 0:
+                colors.append('orange')
+
+        plt.scatter(bundle_data['age'], bundle_data[y_column], c=colors)
+        plt.xlabel('age')
+        plt.ylabel(y_column)
+        plt.title(f"{title} - {bundle}")
+        os.makedirs(directory, exist_ok=True)
+        plt.savefig(os.path.join(directory,f"{file_path}_{bundle}.png"))
+        plt.clf()
+
+
+def get_matching_indexes(file_path, subset_path):
+    # Load the CSV files into DataFrames
+    df1 = pd.read_csv(file_path)
+    df2 = pd.read_csv(subset_path)
+
+    # Find the matching indexes where entire rows are the same
+    matching_indexes = df2["old_index"].tolist()
+
+    # On vérifie ligne par ligne que DF2.iloc[i] == DF1.loc[DF2.iloc[i]["OldIndex"]]
+    colonnes_a_verifier = ["sid", "bundle", "mean", "age"]
+
+    # Boucle de vérification
+    for i in range(len(df2)):
+        index_dans_df1 = df2.iloc[i]["old_index"]
+        ligne_df1 = df1.loc[index_dans_df1, colonnes_a_verifier]
+        ligne_df2 = df2.iloc[i][colonnes_a_verifier]
+
+        if not ligne_df1.equals(ligne_df2):
+            print(f"Mismatch à la ligne {i} :")
+            print("Dans df1 :\n", ligne_df1)
+            print("Dans df2 :\n", ligne_df2)
+            print("-" * 40)
+
+
+    return matching_indexes

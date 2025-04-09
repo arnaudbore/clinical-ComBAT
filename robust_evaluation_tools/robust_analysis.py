@@ -62,24 +62,95 @@ def count_bundles_per_outliers(df):
 #bundles_per_outliers.head(10)
 
 def get_distribution_properties(mov_data):
-    
+    """
+    Calcule plusieurs mesures de distribution pour chaque 'bundle' dans mov_data.
+    mov_data doit contenir au moins deux colonnes :
+        - 'bundle' (catégoriel)
+        - 'mean_no_cov' (valeurs numériques)
+    Retourne un DataFrame avec une ligne par mesure et une colonne par 'bundle'.
+    """
+
+    # Dictionnaires pour stocker les métriques par bundle
     skewness_per_bundle = {}
     mean_median_shift_per_bundle = {}
     kurtosis_per_bundle = {}
+    
+    # Mesures supplémentaires
+    bowley_skewness_per_bundle = {}
+    left_right_mean_diff_per_bundle = {}
+    left_right_std_ratio_per_bundle = {}
 
+    # Parcours de chaque bundle
     for bundle in mov_data['bundle'].unique():
         bundle_data = mov_data[mov_data['bundle'] == bundle]
-        skewness_per_bundle[bundle] = bundle_data['mean_no_cov'].skew()
-        mean_median_shift_per_bundle[bundle] = np.abs(bundle_data['mean_no_cov'].mean() - bundle_data['mean_no_cov'].median())/bundle_data['mean_no_cov'].mean()
-        kurtosis_per_bundle[bundle] = bundle_data['mean_no_cov'].kurtosis()
-    
-    # Create DataFrame with bundles as columns
-    bundles = mov_data['bundle'].unique()
-    df = pd.DataFrame(index=['skewness', 'mean_median_shift', 'kurtosis'], columns=bundles)
+        
+        # Distribution à analyser
+        x = bundle_data['mean_no_cov'].dropna()
+        
+        # Skewness, kurtosis, etc.
+        skewness_per_bundle[bundle] = x.skew()
+        kurtosis_per_bundle[bundle] = x.kurtosis()
+        
+        # Écart (absolu) entre la moyenne et la médiane (relatif à la médiane)
+        median_val = x.median()
+        mean_val = x.mean()
+        mean_median_shift_per_bundle[bundle] = np.abs(mean_val - median_val) / median_val if median_val != 0 else np.nan
+        
+        # --- Métriques supplémentaires ---
+        
+        # 1. Bowley Skewness (fondée sur les quartiles)
+        Q1 = x.quantile(0.25)
+        Q3 = x.quantile(0.75)
+        # Assurer que (Q3 - Q1) != 0
+        if Q3 != Q1:
+            bowley_skewness_per_bundle[bundle] = ((Q3 - median_val) - (median_val - Q1)) / (Q3 - Q1)
+        else:
+            bowley_skewness_per_bundle[bundle] = np.nan
+        
+        # 2. Différence de moyenne (côté droit vs côté gauche de la médiane), normalisée par l'écart-type global
+        left_data = x[x < median_val]
+        right_data = x[x > median_val]
+        std_global = x.std()
+        if (len(left_data) > 0) and (len(right_data) > 0) and std_global != 0:
+            left_mean = left_data.mean()
+            right_mean = right_data.mean()
+            left_right_mean_diff_per_bundle[bundle] = (right_mean - left_mean) / std_global
+        else:
+            left_right_mean_diff_per_bundle[bundle] = np.nan
+        
+        # 3. Ratio des écarts-types (côté droit / côté gauche)
+        if (len(left_data) > 1) and (len(right_data) > 1):
+            left_std = left_data.std()
+            right_std = right_data.std()
+            # Pour éviter division par zéro
+            if left_std != 0:
+                left_right_std_ratio_per_bundle[bundle] = right_std / left_std
+            else:
+                left_right_std_ratio_per_bundle[bundle] = np.nan
+        else:
+            left_right_std_ratio_per_bundle[bundle] = np.nan
 
-    # Populate DataFrame
-    for bundle in mov_data['bundle'].unique():
+    # Création du DataFrame avec une ligne par propriété et une colonne par bundle
+    bundles = mov_data['bundle'].unique()
+    df = pd.DataFrame(
+        index=[
+            'skewness',
+            'mean_median_shift',
+            'kurtosis',
+            'bowley_skewness',
+            'left_right_mean_diff',
+            'left_right_std_ratio'
+        ],
+        columns=bundles
+    )
+
+    # Remplissage du DataFrame
+    for bundle in bundles:
         df.at['skewness', bundle] = skewness_per_bundle[bundle]
         df.at['mean_median_shift', bundle] = mean_median_shift_per_bundle[bundle]
         df.at['kurtosis', bundle] = kurtosis_per_bundle[bundle]
+        df.at['bowley_skewness', bundle] = bowley_skewness_per_bundle[bundle]
+        df.at['left_right_mean_diff', bundle] = left_right_mean_diff_per_bundle[bundle]
+        df.at['left_right_std_ratio', bundle] = left_right_std_ratio_per_bundle[bundle]
+
     return df.reset_index().rename(columns={'index': 'property'})

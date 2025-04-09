@@ -115,6 +115,34 @@ def compare_with_compilation(df):
 
     return mean_df
 
+def compare_with_compilation_var(df):
+    compilation_df = get_compilation_df(df)
+    # Charger le DataFrame COMPILATION
+
+    # Filtrer les patients de COMPILATION qui sont dans df en utilisant les sid
+    common_sids = df['sid'].unique()
+    filtered_compilation_df = compilation_df[compilation_df['sid'].isin(common_sids)]
+
+    # Initialiser une liste pour stocker les résultats
+    comparison_df = pd.DataFrame()
+
+    # Comparer la différence de variance par bundle
+    for bundle in df['bundle'].unique():
+        df_bundle = df[df['bundle'] == bundle]
+        compilation_bundle = filtered_compilation_df[filtered_compilation_df['bundle'] == bundle]
+        
+        # Calculer la variance pour chaque bundle
+        variance_df = df_bundle['mean'].var()
+        variance_compilation = compilation_bundle['mean'].var()
+        
+        # Calculer la différence absolue des variances
+        comparison_df[bundle] = [abs(variance_df - variance_compilation)]
+            
+    # Ajouter le site au DataFrame
+    mean_df = pd.DataFrame(comparison_df.mean()).transpose()
+
+    return mean_df
+
 def compare_with_camcan(df):
     compilation_df = get_camcan_df(df)
     # Charger le DataFrame COMPILATION

@@ -11,6 +11,24 @@ from clinical_combat.harmonization.QuickCombat import QuickCombat
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+def get_diseases(include_SYN=False):
+    if include_SYN:
+        return ["AD", "ADHD", "BIP", "MCI", "SCHZ", "TBI", "SYN_0.5", "SYN_1", "SYN_2", "SYN_-1"]
+    return ["AD", "ADHD", "BIP", "MCI", "SCHZ", "TBI"]
+
+def get_metrics():
+    return [
+        "ad",
+        "adt",
+        "afd",
+        "fa",
+        "fat",
+        "fw",
+        "md",
+        "mdt",
+        "rd",
+        "rdt"
+    ]
 
 # Compare if two DataFrames have the same values in the 'sid' column
 def compare_sid(df1, df2):
@@ -174,3 +192,8 @@ def show_scatter_plot(df, column, bundle):
     plt.ylabel(column)
     plt.legend()
     plt.show()
+
+
+def get_camcan_file(metric):
+    compilation_folder = os.path.join('DONNES', 'CamCAN')
+    return os.path.join(compilation_folder, f"CamCAN.{metric}.raw.csv.gz")
