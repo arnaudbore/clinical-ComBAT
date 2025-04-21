@@ -4,6 +4,8 @@ import pandas as pd
 import subprocess
 import json
 
+from joblib import Parallel, delayed
+
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 
@@ -160,104 +162,62 @@ def apply_bias(dataframe, additive_bias_per_bundle, multiplicative_bias_per_bund
     # Assigner les valeurs biaisées calculées au DataFrame
     return biased_df
 
-#GENERATE SITES
-def generate_sites(sample_sizes, disease_ratios, num_tests, directory, data_path, disease=None):
+def process_test(sample_size, disease_ratio, i, train_df, test_df, directory, data_path):
+    sizeDir = os.path.join(directory, f"{sample_size}_{int(disease_ratio*100)}")
+    tempDir = os.path.join(sizeDir, f"{i}")
+    os.makedirs(tempDir, exist_ok=True)
+
+    train_df_biaised, test_df_biaised, gammas, deltas, parameters = generate_biaised_data(train_df, test_df)
+    sampled_df_biaied = sample_patients(train_df_biaised, sample_size, disease_ratio, i)
+
+    if 'metric_bundle' in sampled_df_biaied.columns:
+        temp_train_file = os.path.join(tempDir, f"train_{sample_size}_{int(disease_ratio*100)}_{i}_all.csv")
+        sampled_df_biaied.to_csv(temp_train_file, index=False)
+
+        temp_test_file = os.path.join(tempDir, f"test_{sample_size}_{int(disease_ratio*100)}_{i}_all.csv")
+        test_df_biaised.to_csv(temp_test_file, index=False)
+
+        for metric in sampled_df_biaied['metric'].unique():
+            metric_df = sampled_df_biaied[sampled_df_biaied['metric'] == metric]
+            metric_test_df = test_df_biaised[test_df_biaised['metric'] == metric]
+
+            metric_train_file = os.path.join(tempDir, f"train_{sample_size}_{int(disease_ratio*100)}_{i}_{metric}.csv")
+            metric_df.to_csv(metric_train_file, index=False)
+
+            metric_test_file = os.path.join(tempDir, f"test_{sample_size}_{int(disease_ratio*100)}_{i}_{metric}.csv")
+            metric_test_df.to_csv(metric_test_file, index=False)
+
+            # Visualization - en commentaire si tu veux pas l'exécuter
+            # subprocess.call([...])
+
+    else:
+        temp_train_file = os.path.join(tempDir, f"train_{sample_size}_{int(disease_ratio*100)}_{i}.csv")
+        sampled_df_biaied.to_csv(temp_train_file, index=False)
+
+        temp_test_file = os.path.join(tempDir, f"test_{sample_size}_{int(disease_ratio*100)}_{i}.csv")
+        test_df_biaised.to_csv(temp_test_file, index=False)
+
+        with open(os.path.join(tempDir, 'parameters.json'), 'w') as file:
+            json.dump({'parameters': parameters, 'gammas': gammas, 'deltas': deltas}, file, indent=4)
+
+        subprocess.call(
+            f"scripts/combat_visualize_data.py {data_path} {temp_train_file} --out_dir {os.path.join(tempDir, 'VIZ')} -f",
+            shell=True)
+        subprocess.call(
+            f"scripts/combat_visualize_data.py {data_path} {temp_test_file} --out_dir {os.path.join(tempDir, 'VIZ_TEST')} -f",
+            shell=True)
+
+def generate_sites(sample_sizes, disease_ratios, num_tests, directory, data_path, disease=None, n_jobs=-1):
     df = pd.read_csv(data_path)
     if disease is not None:
         df = df[(df['disease'] == disease) | (df['disease'] == 'HC')]
 
     train_df, test_df = split_train_test(df, test_size=0.2, random_state=42)
-    # Initialize DataFrames to store the results
+
     for sample_size in sample_sizes:
-        for disease_ratio in disease_ratios:  
-            sizeDir = os.path.join(directory, f"{sample_size}_{int(disease_ratio*100)}")
-            for i in range(num_tests):
-                
-                tempDir = os.path.join(sizeDir, f"{i}")
-                os.makedirs(tempDir, exist_ok=True)
-
-                train_df_biaised, test_df_biaised, gammas, deltas, parameters= generate_biaised_data(train_df, test_df)
-
-                sampled_df_biaied =  sample_patients(train_df_biaised, sample_size, disease_ratio,i)
-
-                # Iterate through each unique metric and save files
-                if 'metric_bundle' in sampled_df_biaied.columns:
-                    # Sauvegarder l'échantillon dans un fichier temporaire
-                    temp_train_file = os.path.join(tempDir, f"train_{sample_size}_{int(disease_ratio*100)}_{i}_all.csv")
-                    sampled_df_biaied.to_csv(temp_train_file, index=False)
-                    
-                    temp_test_file = os.path.join(tempDir, f"test_{sample_size}_{int(disease_ratio*100)}_{i}_all.csv")
-                    test_df_biaised.to_csv(temp_test_file, index=False)
-                    for metric in sampled_df_biaied['metric'].unique():
-                        metric_df = sampled_df_biaied[sampled_df_biaied['metric'] == metric]
-                        metric_test_df = test_df_biaised[test_df_biaised['metric'] == metric]
-
-                        # Save the metric-specific train and test files
-                        metric_train_file = os.path.join(tempDir, f"train_{sample_size}_{int(disease_ratio*100)}_{i}_{metric}.csv")
-                        metric_df.to_csv(metric_train_file, index=False)
-                        
-                        metric_test_file = os.path.join(tempDir, f"test_{sample_size}_{int(disease_ratio*100)}_{i}_{metric}.csv")
-                        metric_test_df.to_csv(metric_test_file, index=False)
-
-                        # Apply visualization for each metric-specific file
-                        
-                        cmd = (
-                            "scripts/combat_visualize_data.py"
-                            + " "
-                            + f"DONNES/adni_compilation.{metric}.csv.gz"
-                            + " "
-                            + metric_train_file
-                            + " --out_dir "
-                            + os.path.join(tempDir, f"VIZ/{metric}")
-                            + " -f"
-                            #+ " --bundles all"
-                        )
-                        #subprocess.call(cmd, shell=True)
-                        cmd = (
-                            "scripts/combat_visualize_data.py"
-                            + " "
-                            + f"DONNES/adni_compilation.{metric}.csv.gz"
-                            + " "
-                            + metric_test_file
-                            + " --out_dir "
-                            + os.path.join(tempDir, f"VIZ_TEST/{metric}")
-                            + " -f"
-                            #+ " --bundles all"
-                        )
-                        #subprocess.call(cmd, shell=True)
-                else:
-                    # Sauvegarder l'échantillon dans un fichier temporaire
-                    temp_train_file = os.path.join(tempDir, f"train_{sample_size}_{int(disease_ratio*100)}_{i}.csv")
-                    sampled_df_biaied.to_csv(temp_train_file, index=False)
-                    
-                    temp_test_file = os.path.join(tempDir, f"test_{sample_size}_{int(disease_ratio*100)}_{i}.csv")
-                    test_df_biaised.to_csv(temp_test_file, index=False)
-
-                    # Sauvegarde dans un fichier JSON
-                    with open(os.path.join(tempDir,'parameters.json'), 'w') as file:
-                        json.dump({'parameters': parameters, 'gammas': gammas, 'deltas': deltas}, file, indent=4)
-
-                    cmd = (
-                        "scripts/combat_visualize_data.py"
-                        + " "
-                        + data_path
-                        + " "
-                        + temp_train_file
-                        + " --out_dir "
-                        + os.path.join(tempDir, "VIZ")
-                        + " -f"
-                        #+ " --bundles all"
-                    )
-                    subprocess.call(cmd, shell=True)
-                    cmd = (
-                        "scripts/combat_visualize_data.py"
-                        + " "
-                        + data_path
-                        + " "
-                        + temp_test_file
-                        + " --out_dir "
-                        + os.path.join(tempDir, "VIZ_TEST")
-                        + " -f"
-                        #+ " --bundles all"
-                    )
-                    subprocess.call(cmd, shell=True)
+        for disease_ratio in disease_ratios:
+            Parallel(n_jobs=n_jobs)(
+                delayed(process_test)(
+                    sample_size, disease_ratio, i, train_df, test_df, directory, data_path
+                ) for i in range(num_tests)
+            )

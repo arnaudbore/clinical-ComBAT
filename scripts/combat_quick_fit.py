@@ -126,7 +126,7 @@ def _build_arg_parser():
     p.add_argument(
         "--robust",
         default="No",
-        choices=["No", "IQR", "MAD","MMS", 'VS', 'VS2','TOP5', 'TOP10', 'TOP20', 'TOP30', 'TOP40', 'TOP50', 'CHEAT'],
+        choices=["No", "IQR", "MAD","MMS", 'VS', 'VS2','TOP5', 'TOP10', 'TOP20', 'TOP30', 'TOP40', 'TOP50', 'CHEAT', 'FLIP'],
         help="If set, use combat robust. This tries "
         + "identifying/rejecting non-HC subjects.",
     )
@@ -218,6 +218,7 @@ def main():
     if args.robust != 'No':
         mov_data = remove_outliers(ref_data, mov_data, args)
 
+    QC.robust = args.robust
     QC.fit(ref_data, mov_data, args.hc)
 
     logging.info("Saving file: %s", output_filename)

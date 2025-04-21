@@ -17,7 +17,8 @@ def from_model_name(
     regul_ref=0,
     regul_mov=0,
     nu=0,
-    tau=1
+    tau=1,
+    robust='No',
 ):
 
     if name == "classic":

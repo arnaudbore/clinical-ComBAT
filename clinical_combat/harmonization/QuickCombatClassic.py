@@ -208,6 +208,16 @@ class QuickCombatClassic(QuickCombat):
         self.gamma_mov = np.array([np.mean(x) for x in z])
         self.delta_mov = np.array([np.std(x, ddof=1) for x in z])
 
+        if hasattr(self, 'robust') and self.robust == 'FLIP':
+            print("FLIPPERRRRRRRR")
+            self.gamma_mov = np.array([np.median(x) for x in z])
+            self.delta_mov = np.array([
+                # Pour chaque tableau x :
+                np.mean(x[x <= np.median(x)]) - np.median(x)
+                for x in z
+            ])
+
+
         if self.use_empirical_bayes:
             self.gamma_mov, self.delta_mov = QuickCombat.emperical_bayes_estimate(
                 z,

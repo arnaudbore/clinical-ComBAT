@@ -94,39 +94,43 @@ def find_outliers_VS(data, column='mean_no_cov'):
     Retourne :
         list: Une liste des indices des valeurs supprimées.
     """
+    # --- Classement des métriques (comme décidé plus tôt) -------------
+    METRICS_HIGH = {'md', 'mdt', 'rd', 'rdt', 'fw', 'ad', 'adt'}  # patho ↑
+    METRICS_LOW  = {'fa', 'fat', 'afd'}                           # patho ↓
+    # ------------------------------------------------------------------
+
+    metric_name = data['metric'].iloc[0]
+
+    if metric_name in METRICS_HIGH:
+        side = 'right'   # on enlève les plus grosses valeurs
+    elif metric_name in METRICS_LOW:
+        side = 'left'    # on enlève les plus petites valeurs
+    else:
+        return []        # métrique non classée → on ne fait rien
+
     outliers_idx = []
     median = data[column].median()
-    left_mean = abs((data[data[column] < median][column] - median).mean())
-    right_mean = abs((data[data[column] > median][column] - median).mean())
-
-    if right_mean > left_mean:
-        last = 'right'
-    else:
-        last = 'left'
 
     while True:
-        # Calcul des moyennes des écarts à gauche et à droite de la médiane
-        left_mean = abs((data[data[column] < median][column] - median).mean())
+        # Moyennes des écarts de chaque côté de la médiane
+        left_mean  = abs((data[data[column] < median][column] - median).mean())
         right_mean = abs((data[data[column] > median][column] - median).mean())
 
-        if abs(left_mean - right_mean) <= 1e-6:  # Tolérance pour l'équilibre
+        # Équilibre atteint (même critère qu’avant)
+        if abs(left_mean - right_mean) <= 1e-6:
             break
 
-        if right_mean > left_mean:
-            if last == 'left':
+        if side == 'right':
+            # On continue seulement si la droite domine encore
+            if right_mean <= left_mean:
                 break
-            # Supprimer la valeur la plus éloignée à droite
-            target_idx = data[column].idxmax()
-        else:
-            if last == 'right':
+            target_idx = data[column].idxmax()   # plus grand écart à droite
+        else:  # side == 'left'
+            if left_mean <= right_mean:
                 break
-            # Supprimer la valeur la plus éloignée à gauche
-            target_idx =  data[column].idxmin()
+            target_idx = data[column].idxmin()   # plus grand écart à gauche
 
-        # Ajouter l'index aux outliers
         outliers_idx.append(target_idx)
-
-        # Supprimer la ligne correspondante
         data = data.drop(target_idx)
 
     return outliers_idx
@@ -144,40 +148,45 @@ def find_outliers_VS2(data, column='mean_no_cov'):
     Retourne :
         list: Une liste des indices des valeurs supprimées.
     """
+    # --- Classement des métriques (comme décidé plus tôt) -------------
+    METRICS_HIGH = {'md', 'mdt', 'rd', 'rdt', 'fw', 'ad', 'adt'}  # patho ↑
+    METRICS_LOW  = {'fa', 'fat', 'afd'}                           # patho ↓
+    # ------------------------------------------------------------------
+
+    metric_name = data['metric'].iloc[0]
+
+    if metric_name in METRICS_HIGH:
+        side = 'right'   # on enlève les plus grosses valeurs
+    elif metric_name in METRICS_LOW:
+        side = 'left'    # on enlève les plus petites valeurs
+    else:
+        return []        # métrique non classée → on ne fait rien
+
     outliers_idx = []
     median = data[column].median()
-    left_mean = abs((data[data[column] < median][column] - median).mean())
-    right_mean = abs((data[data[column] > median][column] - median).mean())
-
-    if right_mean > left_mean:
-        last = 'right'
-    else:
-        last = 'left'
 
     while True:
-        # Calcul des moyennes des écarts à gauche et à droite de la médiane
+        # Moyennes des écarts de chaque côté de la médiane
         median = data[column].median()
-        left_mean = abs((data[data[column] < median][column] - median).mean())
+        
+        left_mean  = abs((data[data[column] < median][column] - median).mean())
         right_mean = abs((data[data[column] > median][column] - median).mean())
 
-        if abs(left_mean - right_mean) <= 1e-6:  # Tolérance pour l'équilibre
+        # Équilibre atteint (même critère qu’avant)
+        if abs(left_mean - right_mean) <= 1e-6:
             break
 
-        if right_mean > left_mean:
-            if last == 'left':
+        if side == 'right':
+            # On continue seulement si la droite domine encore
+            if right_mean <= left_mean:
                 break
-            # Supprimer la valeur la plus éloignée à droite
-            target_idx = data[column].idxmax()
-        else:
-            if last == 'right':
+            target_idx = data[column].idxmax()   # plus grand écart à droite
+        else:  # side == 'left'
+            if left_mean <= right_mean:
                 break
-            # Supprimer la valeur la plus éloignée à gauche
-            target_idx =  data[column].idxmin()
+            target_idx = data[column].idxmin()   # plus grand écart à gauche
 
-        # Ajouter l'index aux outliers
         outliers_idx.append(target_idx)
-
-        # Supprimer la ligne correspondante
         data = data.drop(target_idx)
 
     return outliers_idx
@@ -216,27 +225,33 @@ def find_outliers_MAD(data, column='mean_no_cov', threshold=3.5):
 def reject_outliers_until_mad_equals_mean(data,  threshold=0.001): 
     column = 'mean_no_cov'
     outliers_idx = []
-    
+
+    # --- Définis tes trois métriques ici ------------------------------
+    METRICS_HIGH = {'md', 'mdt', 'rd', 'rdt', 'fw', 'ad', 'adt'}
+    METRICS_LOW  = {'fa', 'fat', 'afd'}
+    # ------------------------------------------------------------------
+
+    metric_name = data['metric'].iloc[0]
+
+    if metric_name in METRICS_HIGH:
+        pick_idx = lambda s: s.idxmax()   # enlève la valeur maximale
+    elif metric_name in METRICS_LOW:
+        pick_idx = lambda s: s.idxmin()   # enlève la valeur minimale
+    else:
+        # Rien à faire, on retourne une liste vide
+        return outliers_idx
+
     while True:
         median = data[column].median()
-        mean = data[column].mean()
+        mean   = data[column].mean()
 
         if abs(median - mean) / median < threshold:
             break
 
-        if mean < median:
-            # Trouver l'index de la valeur minimale
-            target_idx = data[column].idxmin()
-        else:
-            # Trouver l'index de la valeur maximale
-            target_idx = data[column].idxmax()
-        
-        # Ajouter l'index aux outliers
+        target_idx = pick_idx(data[column])
         outliers_idx.append(target_idx)
-        
-        # Supprimer la ligne correspondante
         data = data.drop(target_idx)
-    
+
     return outliers_idx
 
 def remove_top_x_percent(data, column='mean_no_cov', x=5):
@@ -284,8 +299,10 @@ def top50(data):
 def cheat(data):
     return data[data['disease'] != 'HC'].index.to_list()
 
-    
+def rien(data):
+    return []
 
+    
 ROBUST_METHODS = {
     "IQR": find_outliers_IQR,
     "MAD": find_outliers_MAD,
@@ -299,6 +316,7 @@ ROBUST_METHODS = {
     "TOP40": top40,
     "TOP50": top50,
     "CHEAT": cheat,
+    "FLIP": rien
 }
 from clinical_combat.harmonization.QuickCombat import QuickCombat
 

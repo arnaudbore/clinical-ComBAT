@@ -25,7 +25,7 @@ class QuickCombat(QuickHarmonizationMethod):
         limit_age_range=False,
         degree=1,
         regul_ref=0,
-        regul_mov=0,
+        regul_mov=0
     ):
         """
         use_empirical_bayes: bool
