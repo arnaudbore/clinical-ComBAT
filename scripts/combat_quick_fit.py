@@ -126,7 +126,43 @@ def _build_arg_parser():
     p.add_argument(
         "--robust",
         default="No",
-        choices=["No", "IQR", "MAD","MMS", 'VS', 'VS2','TOP5', 'TOP10', 'TOP20', 'TOP30', 'TOP40', 'TOP50', 'CHEAT', 'FLIP', 'Z_SCORE', 'Z_SCORE_IQR',"Z_SCORE_MAD" ],
+        choices=["No", 
+                 "IQR",
+                "IQR_STRICT",
+                "MAD",
+                "MAD_STRICT",
+                "MAD_VS",
+                "MMS",
+                "VS",
+                "VS2",
+                "TOP5",
+                "TOP10",
+                "TOP20",
+                "TOP30",
+                "TOP40",
+                "TOP50",
+                "CHEAT",
+                "FLIP",
+                "Z_SCORE",
+                "Z_SCORE_IQR",
+                "Z_SCORE_MAD",
+                "Z_SCORE_BUNDLE",
+                "Z_SCORE_BUNDLE_STRICT",
+                "Z_SCORE_METRIC",
+                "Z_SCORE_METRIC_STRICT",
+                "Z_SCORE_METRIC_VSTRICT",
+                "MLP_AD_5",
+                "MLP_AD_6",
+                "MLP_ALL_5",
+                "MLP_ALL_6",
+                "MLP2_ALL_5",
+                "MLP2_ALL_6",
+                "MLP2_ALL_9",
+                "MLP2_ALL_5_MAD",
+                "MLP2_ALL_6_MAD",
+                "SN",
+                "QN",
+                "LOF"],
         help="If set, use combat robust. This tries "
         + "identifying/rejecting non-HC subjects.",
     )
@@ -218,7 +254,7 @@ def main():
     
     if args.robust != 'No':
         mov_data = remove_outliers(ref_data, mov_data, args)
-    cols = ['Z_SCORE']
+    cols = ['Z_SCORE', 'MLP_AD_5', 'MLP_AD_6', 'MLP_ALL_5', 'MLP_ALL_6', "MLP2_ALL_5"]
     cols_to_drop = [c for c in cols if c in mov_data.columns]
     mov_data =  mov_data.drop(columns=cols_to_drop)
     QC.robust = args.robust

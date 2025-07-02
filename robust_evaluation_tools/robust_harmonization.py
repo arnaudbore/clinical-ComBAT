@@ -101,22 +101,51 @@ def visualize_harmonization(f, new_f, ref_data_file, directory, bundles = '', ti
         cmd += f" --bundles {bundles}"
     if title != '':
         cmd += f" --outname {title}"
+        cmd += f" --add_suffix {title}"
     subprocess.call(cmd, shell=True)
 
 def QC(ref_data, output_filename, output_model_filename):
     return combat_quick_QC.QC(ref_data, output_filename, output_model_filename)
-    
-def compare_with_compilation(df, directory, harmonizartion_method):
-    # compilation_df = get_compilation_df(df)
-    compilation_df = get_ground_truth_df(df, directory, harmonizartion_method)
-    # Charger le DataFrame COMPILATION
+
+
+def compare_with_compilation_STD(df, compilation_df):
 
     # Filtrer les patients de COMPILATION qui sont dans df en utilisant les sid
     common_sids = df['sid'].unique()
     filtered_compilation_df = compilation_df[compilation_df['sid'].isin(common_sids)]
 
     if len(filtered_compilation_df) != len(df):
-        raise ValueError(f"Attention: Nombre de lignes différent entre df ({len(df)}) et filtered_compilation_df ({len(comp_filt)})")
+        raise ValueError(f"Attention: Nombre de lignes différent entre df ({len(df)}) et filtered_compilation_df ({len(filtered_compilation_df)})")
+
+    # Initialiser une liste pour stocker les résultats
+    comparison_df = pd.DataFrame()
+
+    # Comparer la différence absolue de la colonne mean par bundle
+    for bundle in df['bundle'].unique():
+        df_bundle = df[df['bundle'] == bundle]
+        compilation_bundle = filtered_compilation_df[filtered_compilation_df['bundle'] == bundle]
+        std_val = compilation_bundle['mean_no_cov'].std()
+        
+        # Fusionner les deux DataFrames sur les colonnes 'sid' et 'bundle'
+        merged_df = pd.merge(df_bundle, compilation_bundle, on=['sid', 'bundle'], suffixes=('_df', '_compilation'))
+        
+        # Calculer la différence absolue de la colonne mean
+        merged_df['abs_diff_mean'] = (merged_df['mean_df'] - merged_df['mean_compilation']).abs() / std_val
+        # Calculer la somme des différences absolues pour le bundle
+        comparison_df[bundle] = merged_df['abs_diff_mean']
+            
+    # Ajouter le site au DataFrame
+    mean_df = pd.DataFrame(comparison_df.mean()).transpose()
+    return mean_df
+    
+def compare_with_compilation(df, compilation_df):
+
+    # Filtrer les patients de COMPILATION qui sont dans df en utilisant les sid
+    common_sids = df['sid'].unique()
+    filtered_compilation_df = compilation_df[compilation_df['sid'].isin(common_sids)]
+
+    if len(filtered_compilation_df) != len(df):
+        raise ValueError(f"Attention: Nombre de lignes différent entre df ({len(df)}) et filtered_compilation_df ({len(filtered_compilation_df)})")
 
     # Initialiser une liste pour stocker les résultats
     comparison_df = pd.DataFrame()
@@ -139,10 +168,8 @@ def compare_with_compilation(df, directory, harmonizartion_method):
 
     return mean_df
 
-def compare_with_compilation_SMAPE(df, directory, harmonizartion_method):
-    # compilation_df = get_compilation_df(df)
-    compilation_df = get_ground_truth_df(df, directory, harmonizartion_method)
-    compilation_df = compilation_df[~compilation_df['bundle'].isin(['left_ventricle', 'right_ventricle'])]
+def compare_with_compilation_SMAPE(df, compilation_df):
+    # compilation_df = get_ground_truth_df(df, directory, harmonizartion_method)
     common_sids = df['sid'].unique()
     comp_filt = compilation_df[compilation_df['sid'].isin(common_sids)]
 
@@ -170,17 +197,14 @@ def compare_with_compilation_SMAPE(df, directory, harmonizartion_method):
     mean_df.index = ['SMAPE_mean_%']
     return mean_df
 
-def compare_with_compilation_var(df, directory, harmonizartion_method):
-    # compilation_df = get_compilation_df(df)
-    compilation_df = get_ground_truth_df(df, directory, harmonizartion_method)
-    # Charger le DataFrame COMPILATION
+def compare_with_compilation_var(df, compilation_df):
 
     # Filtrer les patients de COMPILATION qui sont dans df en utilisant les sid
     common_sids = df['sid'].unique()
     filtered_compilation_df = compilation_df[compilation_df['sid'].isin(common_sids)]
 
     if len(filtered_compilation_df) != len(df):
-        raise ValueError(f"Attention: Nombre de lignes différent entre df ({len(df)}) et filtered_compilation_df ({len(comp_filt)})")
+        raise ValueError(f"Attention: Nombre de lignes différent entre df ({len(df)}) et filtered_compilation_df ({len(filtered_compilation_df)})")
 
     # Initialiser une liste pour stocker les résultats
     comparison_df = pd.DataFrame()
@@ -328,6 +352,7 @@ def get_compilation_df(df):
     compilation_folder = os.path.join('DONNES_F', 'COMPILATIONS_AUG_3')
     compilation_file = os.path.join(compilation_folder, f"{disease}_combination_all_metrics_CamCAN.csv.gz")
     compilation_df = pd.read_csv(compilation_file, compression='gzip')
+    compilation_df = compilation_df[~compilation_df['bundle'].isin(['left_ventricle', 'right_ventricle'])]
     return compilation_df[compilation_df['metric'] == metric]
 
 def get_ground_truth_df(df, directory, harmonizartion_method):

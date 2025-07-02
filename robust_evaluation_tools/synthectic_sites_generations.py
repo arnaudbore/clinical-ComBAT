@@ -194,11 +194,7 @@ def generate_biaised_data(df1, df2,ssv, fixed_bias=False,
 
     
     # Appliquer les biais indépendamment à df1 et df2 en utilisant les mêmes biais générés
-    combined = pd.concat([df1, df2], ignore_index=True)
-    if ssv == 'v2':
-        biased_df = apply_bias_2(df1,df2, additive_bias_per_bundle, multiplicative_bias_per_bundle)
-    else:
-        biased_df = apply_bias(combined, additive_bias_per_bundle, multiplicative_bias_per_bundle)
+    biased_df = apply_bias_2(df1,df2, additive_bias_per_bundle, multiplicative_bias_per_bundle)
     
         
     
@@ -278,18 +274,16 @@ def apply_bias_2(df1,df2, additive_bias_per_bundle, multiplicative_bias_per_bund
     for metric in biased_df_all['metric'].unique():
         # Filtrer le DataFrame pour le metric actuel
         biased_df = biased_df_all[biased_df_all['metric'] == metric]
-        df1_metric = df1[df1['metric'] == metric]
         # Appliquer les biais pour le metric actuel
         biased_df = biased_df.sort_values(by=["site", "sid", "bundle"])
-        df1_metric = df1_metric.sort_values(by=["site", "sid", "bundle"])
         ignore_handedness = True
         ignore_sex = False
-        if df1_metric['sex'].nunique() == 1:
+        if biased_df['sex'].nunique() == 1:
             ignore_sex = True
-        if df1_metric['handedness'].nunique() == 1:
+        if biased_df['handedness'].nunique() == 1:
             ignore_handedness = True
         design, y = get_design_matrices(biased_df, ignore_handedness, ignore_sex)
-        design_hc, y_hc = get_design_matrices(df1_metric[df1_metric['disease'] == 'HC'], ignore_handedness, ignore_sex)
+        design_hc, y_hc = get_design_matrices(biased_df[biased_df['disease'] == 'HC'], ignore_handedness, ignore_sex)
         alpha, beta = QuickCombat.get_alpha_beta(design_hc, y_hc)
 
         for i, bundle in enumerate(list(np.unique(biased_df["bundle"]))):
@@ -299,7 +293,6 @@ def apply_bias_2(df1,df2, additive_bias_per_bundle, multiplicative_bias_per_bund
 
             bundle_df = biased_df[biased_df["bundle"] == bundle]
             covariate_effect = np.dot(design[i][1:, :].transpose(), beta[i])
-            biased_df.loc[biased_df["bundle"] == bundle, 'caca'] = (y[i] - covariate_effect - alpha[i])
             biased_df.loc[biased_df["bundle"] == bundle, 'mean'] = (y[i] - covariate_effect - alpha[i]) * multiplicative_bias + additive_bias * np.std(y[i]) + (covariate_effect + alpha[i])
         new_biased_df = pd.concat([new_biased_df, biased_df], ignore_index=True)
     # Assigner les valeurs biaisées calculées au DataFrame
@@ -309,7 +302,6 @@ def process_test(sample_size, disease_ratio, i, train_df, test_df, directory, da
     sizeDir = os.path.join(directory, f"{sample_size}_{int(disease_ratio*100)}")
     tempDir = os.path.join(sizeDir, f"{i}")
     os.makedirs(tempDir, exist_ok=True)
-
     if ssv == 'v2':
         sampled_df= sample_patients(train_df, sample_size, disease_ratio, i)
         sampled_df_biaied, test_df_biaised, gammas, deltas, parameters = generate_biaised_data(sampled_df, test_df, ssv, fixed_biais)
@@ -317,6 +309,11 @@ def process_test(sample_size, disease_ratio, i, train_df, test_df, directory, da
         train_df_biaised, test_df_biaised, gammas, deltas, parameters = generate_biaised_data(train_df, test_df, ssv, fixed_biais)
         sampled_df_biaied = sample_patients(train_df_biaised, sample_size, disease_ratio, i)
 
+    train_sids = sampled_df_biaied['sid'].unique()
+
+    ground_truth_train = train_df[train_df['sid'].isin(train_sids)]
+
+    ground_truth_test = test_df
     
 
     if 'metric_bundle' in sampled_df_biaied.columns:
@@ -326,15 +323,29 @@ def process_test(sample_size, disease_ratio, i, train_df, test_df, directory, da
         temp_test_file = os.path.join(tempDir, f"test_{sample_size}_{int(disease_ratio*100)}_{i}_all.csv")
         test_df_biaised.to_csv(temp_test_file, index=False)
 
+        ground_truth_train_file = os.path.join(tempDir, f"gt_train_{sample_size}_{int(disease_ratio*100)}_{i}.csv")
+        ground_truth_train.to_csv(ground_truth_train_file, index=False)
+
+        ground_truth_test_file = os.path.join(tempDir, f"gt_test_{sample_size}_{int(disease_ratio*100)}_{i}.csv")
+        ground_truth_test.to_csv(ground_truth_test_file, index=False)
+
         for metric in sampled_df_biaied['metric'].unique():
             metric_df = sampled_df_biaied[sampled_df_biaied['metric'] == metric]
             metric_test_df = test_df_biaised[test_df_biaised['metric'] == metric]
+            gt_metric_df = ground_truth_train[ground_truth_train['metric'] == metric]
+            gt_metric_test_df = ground_truth_test[ground_truth_test['metric'] == metric]
 
             metric_train_file = os.path.join(tempDir, f"train_{sample_size}_{int(disease_ratio*100)}_{i}_{metric}.csv")
             metric_df.to_csv(metric_train_file, index=False)
 
             metric_test_file = os.path.join(tempDir, f"test_{sample_size}_{int(disease_ratio*100)}_{i}_{metric}.csv")
             metric_test_df.to_csv(metric_test_file, index=False)
+
+            gt_metric_train_file = os.path.join(tempDir, f"gt_train_{sample_size}_{int(disease_ratio*100)}_{i}_{metric}.csv")
+            gt_metric_df.to_csv(gt_metric_train_file, index=False)
+
+            gt_metric_test_file = os.path.join(tempDir, f"gt_test_{sample_size}_{int(disease_ratio*100)}_{i}_{metric}.csv")
+            gt_metric_test_df.to_csv(gt_metric_test_file, index=False)
 
             # subprocess.call(
             # f"scripts/combat_visualize_data.py {data_path} {temp_train_file} --out_dir {os.path.join(tempDir, 'VIZ')} -f",
@@ -346,6 +357,12 @@ def process_test(sample_size, disease_ratio, i, train_df, test_df, directory, da
 
         temp_test_file = os.path.join(tempDir, f"test_{sample_size}_{int(disease_ratio*100)}_{i}.csv")
         test_df_biaised.to_csv(temp_test_file, index=False)
+
+        ground_truth_train_file = os.path.join(tempDir, f"gt_train_{sample_size}_{int(disease_ratio*100)}_{i}.csv")
+        ground_truth_train.to_csv(ground_truth_train_file, index=False)
+        
+        ground_truth_test_file = os.path.join(tempDir, f"gt_test_{sample_size}_{int(disease_ratio*100)}_{i}.csv")
+        ground_truth_test.to_csv(ground_truth_test_file, index=False)
 
         with open(os.path.join(tempDir, 'parameters.json'), 'w') as file:
             json.dump({'parameters': parameters, 'gammas': gammas, 'deltas': deltas}, file, indent=4)
@@ -360,10 +377,13 @@ def process_test(sample_size, disease_ratio, i, train_df, test_df, directory, da
 def generate_sites(sample_sizes, disease_ratios, num_tests, directory, data_path, SYNTHETIC_SITES_VERSION='v1', disease=None, fixed_biais=False, n_jobs=-1):
     df = pd.read_csv(data_path)
     df = df[~df['bundle'].isin(['left_ventricle', 'right_ventricle'])]
-    if disease is not None:
+    df = df[~((df['disease'] == 'HC') & (df['old_site'] != 'CamCAN'))]
+    if disease == "ASTMIX":
+        df = df[df['disease'].isin(['AD', 'SCHZ', 'TBI', 'HC'])]
+    elif disease is not None:
         df = df[(df['disease'] == disease) | (df['disease'] == 'HC')]
 
-    train_df, test_df = split_train_test(df, test_size=0.05, random_state=42)
+    train_df, test_df = split_train_test(df, test_size=0.05, random_state=43)
 
     Parallel(n_jobs=n_jobs)(
     delayed(process_test)(

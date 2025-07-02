@@ -6,10 +6,11 @@ from matplotlib.patches import Patch
 import seaborn as sns
 import pandas as pd
 from sklearn.metrics import precision_score, recall_score, confusion_matrix, f1_score
+from sklearn.neighbors import LocalOutlierFactor
 import json
 import os
 from scipy.spatial.distance import euclidean
-
+from scipy.stats import shapiro
 
 
 def remove_outliers(ref_data, mov_data, args):
@@ -39,9 +40,12 @@ def remove_outliers(ref_data, mov_data, args):
 
     # Find outliers
     outliers_idx = []
-    for bundle in QC.bundle_names:
-        data = mov_data.query("bundle == @bundle")
-        outliers_idx += find_outlier(data)
+    if args.robust in ['Z_SCORE_METRIC']:
+        outliers_idx += find_outlier(mov_data)
+    else:
+        for bundle in QC.bundle_names:
+            data = mov_data.query("bundle == @bundle")
+            outliers_idx += find_outlier(data)
         
     if not rwp and (site.endswith('viz')):
         plot_distributions_and_scatter(mov_data, outliers_idx, args.out_dir, y_column='mean_no_cov', robust_method=args.robust)
@@ -69,7 +73,7 @@ def remove_outliers(ref_data, mov_data, args):
         mov_data = mov_data.drop(outliers_idx)
     return mov_data
 
-def find_outliers_IQR(data):
+def find_outliers_IQR(data, seuil=1.5):
     """
     Détecte les outliers selon la méthode de l'IQR,
     en s'assurant de laisser au moins 2 données dans l'ensemble.
@@ -84,8 +88,8 @@ def find_outliers_IQR(data):
     Q3 = data['mean_no_cov'].quantile(0.75)
     IQR = Q3 - Q1
 
-    lower_bound = Q1 - 1.5 * IQR
-    upper_bound = Q3 + 1.5 * IQR
+    lower_bound = Q1 - seuil * IQR
+    upper_bound = Q3 + seuil * IQR
 
     # Masque des outliers
     outlier_mask = (data['mean_no_cov'] < lower_bound) | (data['mean_no_cov'] > upper_bound)
@@ -103,6 +107,48 @@ def find_outliers_IQR(data):
         n_to_remove = len(data) - 2
         outlier_indices = sorted_outliers[:n_to_remove].to_list()
         
+
+    return outlier_indices
+
+def find_outliers_ZSCORE_BUNDLE(data, seuil=3.0):
+    """
+    Détecte les outliers avec le Z-score (|z| > seuil),
+    tout en laissant au moins 2 valeurs dans l’ensemble.
+
+    Paramètres
+    ----------
+    data : pandas.DataFrame
+        Doit contenir la colonne 'mean_no_cov'.
+    seuil : float, optionnel
+        Seuil absolu du Z-score (par défaut 3.0).
+
+    Retour
+    ------
+    list
+        Indices des outliers.
+    """
+    # Pas assez de données pour juger
+    if len(data) <= 2:
+        return []
+
+    col = data['mean_no_cov']
+    mu = col.mean()
+    sigma = col.std(ddof=0)  # écart-type population
+    # Si pas de variance, aucun outlier possible
+    if sigma == 0:
+        return []
+
+    z_scores = (col - mu) / sigma
+    outlier_mask = z_scores.abs() > seuil
+    outlier_indices = data[outlier_mask].index.to_list()
+
+    # S’assurer qu’il reste au moins 2 points
+    if len(data) - len(outlier_indices) < 2:
+        # Trier les candidats par distance absolue (|z|)
+        distances = z_scores.abs()[outlier_mask]
+        sorted_outliers = distances.sort_values(ascending=False).index
+        n_to_remove = len(data) - 2
+        outlier_indices = sorted_outliers[:n_to_remove].to_list()
 
     return outlier_indices
 
@@ -254,6 +300,30 @@ def find_outliers_MAD(data, column='mean_no_cov', threshold=3.5):
 
     return outlier_indices
 
+def find_outliers_ZSCORE_METRIC(df, seuil=3.0):
+    if df["sid"].nunique() <= 2:
+        return []
+    work = df.copy()
+
+    def _z(x):
+        mu = x.mean()
+        sigma = x.std(ddof=0)
+        if sigma == 0:
+            return pd.Series(np.zeros(len(x)), index=x.index)
+        return (x - mu) / sigma
+
+    work["_z"] = work.groupby("bundle")["mean_no_cov"].transform(_z)
+    mean_abs_z = work.groupby("sid")["_z"].apply(lambda s: s.abs().mean())
+    outlier_sids = mean_abs_z[mean_abs_z > seuil].index
+
+    if work["sid"].nunique() - len(outlier_sids) < 2:
+        to_kick = mean_abs_z.sort_values(ascending=False).index
+        n_remove = work["sid"].nunique() - 2
+        outlier_sids = to_kick[:n_remove]
+
+    outlier_idx = work[work["sid"].isin(outlier_sids)].index.to_list()
+    return outlier_idx
+
 
 def reject_outliers_until_mad_equals_mean(data, threshold=0.001): 
     column = 'mean_no_cov'
@@ -316,29 +386,8 @@ def remove_top_x_percent(data, column='mean_no_cov', x=5):
 
     return outliers_idx
 
-def top5(data):
-    return remove_top_x_percent(data, column='mean_no_cov', x=5)
-
-def top10(data):
-    return remove_top_x_percent(data, column='mean_no_cov', x=10)
-
-def top20(data):
-    return remove_top_x_percent(data, column='mean_no_cov', x=20)
-
-def top30(data):
-    return remove_top_x_percent(data, column='mean_no_cov', x=30)
-
-def top40(data):
-    return remove_top_x_percent(data, column='mean_no_cov', x=40)   
-
-def top50(data):
-    return remove_top_x_percent(data, column='mean_no_cov', x=50)   
-
 def cheat(data):
     return data[data['disease'] != 'HC'].index.to_list()
-
-def zscore(data):
-    return flagged(data, method='Z_SCORE')
 
 def zscore_IQR(data):
     zs = flagged(data, method='Z_SCORE')
@@ -350,6 +399,10 @@ def zscore_MAD(data):
     mad = find_outliers_MAD(data)
     return list(set(zs) | set(mad))
 
+def mad_vs(data):
+    mad_idx = find_outliers_MAD(data)
+    subset = data.drop(mad_idx)
+    return find_outliers_VS(subset) 
 
 def flagged(data, method):
     return data[data[method] == 1].index.to_list() 
@@ -357,24 +410,186 @@ def flagged(data, method):
 def rien(data):
     return []
 
+def mlp25_all_mad(data, threshold=3.5):
+    mlp = flagged(data, method='MLP2_ALL_5')
+    mad = find_outliers_MAD(data, threshold=threshold)
+    return list(set(mlp) | set(mad))
+
+def mlp26_all_mad(data, threshold=3.5):
+    mlp = flagged(data, method='MLP2_ALL_6')
+    mad = find_outliers_MAD(data, threshold=threshold)
+    return list(set(mlp) | set(mad))
+
+# ------------------------------------------------------------
+# Sn : médiane des médianes des distances, facteur 1.1926
+# ------------------------------------------------------------
+def find_outliers_SN(data: pd.DataFrame,
+                     column: str = "mean_no_cov",
+                     threshold: float = 3.0) -> list:
+    """
+    Détecte les outliers avec l'estimateur Sn de Rousseeuw et Croux.
+    """
+    if len(data) <= 2:
+        return []
+
+    x = data[column].to_numpy()
+    med = np.median(x)
+
+    # Matrice des distances absolues |xi - xj|
+    diffs = np.abs(x[:, None] - x[None, :])
+    # Médiane par ligne puis médiane globale
+    Sn = 1.1926 * np.median(np.median(diffs, axis=1))
+
+    if Sn == 0:
+        print("Sn vaut zéro, impossible de normaliser.")
+        return []
+
+    robust_scores = np.abs(x - med) / Sn
+    outlier_mask = robust_scores > threshold
+    outlier_idx = data.index[outlier_mask].to_list()
+
+    # On garde au moins deux points
+    if len(data) - len(outlier_idx) < 2:
+        scores = robust_scores[outlier_mask]
+        sorted_idx = data.index[outlier_mask][np.argsort(scores)[::-1]]
+        outlier_idx = sorted_idx[: len(data) - 2].to_list()
+
+    return outlier_idx
+
+
+# ------------------------------------------------------------
+# Qn : 1er quartile des paires, facteur 2.2219
+# ------------------------------------------------------------
+def find_outliers_QN(data: pd.DataFrame,
+                     column: str = "mean_no_cov",
+                     threshold: float = 3.0) -> list:
+    """
+    Détecte les outliers avec l'estimateur Qn de Rousseeuw et Croux.
+    """
+    if len(data) <= 2:
+        return []
+
+    x = data[column].to_numpy()
+    med = np.median(x)
+
+    # Distances pour toutes les paires (upper-triangle)
+    diffs = np.abs(x[:, None] - x[None, :])
+    pairwise = diffs[np.triu_indices(len(x), k=1)]
+
+    Qn = 2.2219 * np.percentile(pairwise, 25)
+
+    if Qn == 0:
+        print("Qn vaut zéro, impossible de normaliser.")
+        return []
+
+    robust_scores = np.abs(x - med) / Qn
+    outlier_mask = robust_scores > threshold
+    outlier_idx = data.index[outlier_mask].to_list()
+
+    if len(data) - len(outlier_idx) < 2:
+        scores = robust_scores[outlier_mask]
+        sorted_idx = data.index[outlier_mask][np.argsort(scores)[::-1]]
+        outlier_idx = sorted_idx[: len(data) - 2].to_list()
+
+    return outlier_idx
+
+def _auto_contamination(x: np.ndarray,
+                        pval_weight: float = 0.5,
+                        tail_weight: float = 0.5,
+                        min_c: float = 0.03,
+                        max_c: float = 0.3) -> float:
+    """
+    Retourne un taux d'outliers basé sur normalité (p-val Shapiro)
+    et masse dans les queues robustes (z > 3).
+    """
+    n = len(x)
+    # 1) p-valeur Shapiro (1 = très normal, 0 = très non-normal)
+    try:
+        p_val = shapiro(x).pvalue
+    except Exception:
+        p_val = 0.0          # si Shapiro plante (n > 5000) on force non-normal
+
+    # 2) proportion de points au-delà de 3 σ robustes
+    med = np.median(x)
+    mad = np.median(np.abs(x - med)) * 1.4826  # MAD->σ
+    if mad == 0:
+        tail_frac = 0.0
+    else:
+        tail_frac = np.mean(np.abs(x - med) / mad > 3)
+
+    # Combinaison linéaire
+    score = (1 - p_val) * pval_weight + tail_frac * tail_weight
+    contamination = min_c + score * (max_c - min_c)
+    return float(np.clip(contamination, min_c, max_c))
+
+def find_outliers_LOF(data: pd.DataFrame,
+                           column: str = "mean_no_cov",
+                           k: int = 20,
+                           verbose: bool = False) -> list:
+    """
+    Détecte les outliers en 1-D avec LOF, en estimant automatiquement
+    la proportion d'outliers selon la « gaussianité » des données.
+    """
+    if len(data) <= 2:
+        return []
+
+    x = data[column].to_numpy()
+    contamination = _auto_contamination(x)
+
+    if verbose:
+        print(f"Contamination estimée : {contamination:.3f}")
+
+    lof = LocalOutlierFactor(n_neighbors=min(k, len(x) - 1),
+                             contamination=contamination)
+    preds = lof.fit_predict(x.reshape(-1, 1))   # -1 = outlier
+    outlier_mask = preds == -1
+    outlier_idx = data.index[outlier_mask].to_list()
+
+    # On garde au moins deux points
+    if len(data) - len(outlier_idx) < 2:
+        scores = lof.negative_outlier_factor_[outlier_mask]
+        sorted_idx = data.index[outlier_mask][np.argsort(scores)]
+        outlier_idx = sorted_idx[: len(data) - 2].to_list()
+
+    return outlier_idx
     
 ROBUST_METHODS = {
     "IQR": find_outliers_IQR,
+    "IQR_STRICT": lambda data: find_outliers_IQR(data, seuil=1.0),
     "MAD": find_outliers_MAD,
+    "MAD_VS": mad_vs,
+    "MAD_STRICT": lambda data: find_outliers_MAD(data, threshold=2.0),
     "MMS": reject_outliers_until_mad_equals_mean,
     "VS": find_outliers_VS,
     "VS2": find_outliers_VS2,
-    "TOP5": top5,
-    "TOP10": top10,
-    "TOP20": top20,
-    "TOP30": top30,
-    "TOP40": top40,
-    "TOP50": top50,
+    "TOP5": lambda data: remove_top_x_percent(data, x=5),
+    "TOP10": lambda data: remove_top_x_percent(data, x=10),
+    "TOP20": lambda data: remove_top_x_percent(data, x=20),
+    "TOP30": lambda data: remove_top_x_percent(data, x=30),
+    "TOP40": lambda data: remove_top_x_percent(data, x=40),
+    "TOP50": lambda data: remove_top_x_percent(data, x=50),
     "CHEAT": cheat,
     "FLIP": rien,
-    "Z_SCORE": zscore,
+    "Z_SCORE": lambda data: flagged(data, method='Z_SCORE'),
     "Z_SCORE_IQR": zscore_IQR,
     "Z_SCORE_MAD": zscore_MAD,
+    "Z_SCORE_BUNDLE": lambda data: find_outliers_ZSCORE_BUNDLE(data, seuil=3.0),
+    "Z_SCORE_BUNDLE_STRICT": lambda data: find_outliers_ZSCORE_BUNDLE(data, seuil=2.0),
+    "Z_SCORE_METRIC": find_outliers_ZSCORE_METRIC,
+    "Z_SCORE_METRIC_STRICT": lambda data: find_outliers_ZSCORE_METRIC(data, seuil=2.0),
+    "Z_SCORE_METRIC_VSTRICT": lambda data: find_outliers_ZSCORE_METRIC(data, seuil=1.0),
+    "MLP_AD_5": lambda data: flagged(data, method='MLP_AD_5'),
+    "MLP_AD_6": lambda data: flagged(data, method='MLP_AD_6'),
+    "MLP_ALL_5": lambda data: flagged(data, method='MLP_ALL_5'),
+    "MLP_ALL_6": lambda data: flagged(data, method='MLP_ALL_6'),
+    "MLP2_ALL_5": lambda data: flagged(data, method='MLP2_ALL_5'),
+    "MLP2_ALL_6": lambda data: flagged(data, method='MLP2_ALL_6'),
+    "MLP2_ALL_9": lambda data: flagged(data, method='MLP2_ALL_9'),
+    "SN": find_outliers_SN,
+    "QN": find_outliers_QN,
+    "LOF": find_outliers_LOF,
+    "MLP2_ALL_5_MAD": mlp25_all_mad,
+    "MLP2_ALL_6_MAD": mlp26_all_mad,
 }
 from clinical_combat.harmonization.QuickCombat import QuickCombat
 
@@ -429,7 +644,7 @@ def plot_distributions_and_scatter(df_before, outliers_idx, output_dir, y_column
     nasty_bundle = df_before['nasty_bundle'].unique()[0]
     print ("bundle is ", nasty_bundle)
     
-
+    test_index = site[:-3].split("_")[-1]
 
     bundle_column = 'bundle'
     bundle = nasty_bundle
@@ -448,9 +663,11 @@ def plot_distributions_and_scatter(df_before, outliers_idx, output_dir, y_column
     std_hc_before = df_b_before[df_b_before['disease'] == 'HC'][y_column].std()
     mean_all_before = df_b_before[y_column].mean()
     std_all_before = df_b_before[y_column].std()
+    mean_sick_before = df_b_before[df_b_before['disease'] != 'HC'][y_column].mean()
 
     axes[0].axvline(mean_hc_before, color='blue', linestyle=':', linewidth=1.5, label='Moyenne HC')
     axes[0].axvline(mean_all_before, color='black', linestyle='-.', linewidth=1.5, label='Moyenne Tous')
+    axes[0].axvline(mean_sick_before, color='orange', linestyle='--', linewidth=1.5, label='Moyenne Malades')
     axes[0].axvspan(mean_hc_before - std_hc_before, mean_hc_before + std_hc_before,
                     color='blue', alpha=0.1, label='±1 STD HC')
     axes[0].axvspan(mean_all_before - std_all_before, mean_all_before + std_all_before,
@@ -475,12 +692,14 @@ def plot_distributions_and_scatter(df_before, outliers_idx, output_dir, y_column
     sns.kdeplot(df_b_after[y_column], label='Tous', linestyle='--', ax=axes[1], linewidth=2)
 
     mean_hc_after = df_b_before[df_b_before['disease'] == 'HC'][y_column].mean()
-    std_hc_after = df_b_after[df_b_after['disease'] == 'HC'][y_column].std()
+    std_hc_after = df_b_before[df_b_before['disease'] == 'HC'][y_column].std()
     mean_all_after = df_b_after[y_column].mean()
     std_all_after = df_b_after[y_column].std()
+    mean_sick_after = df_b_after[df_b_after['disease'] != 'HC'][y_column].mean()
 
     axes[1].axvline(mean_hc_after, color='blue', linestyle=':', linewidth=1.5, label='Moyenne HC')
     axes[1].axvline(mean_all_after, color='black', linestyle='-.', linewidth=1.5, label='Moyenne Tous')
+    axes[1].axvline(mean_sick_after, color='orange', linestyle='--', linewidth=1.5, label='Moyenne Malades')
     axes[1].axvspan(mean_hc_after - std_hc_after, mean_hc_after + std_hc_after,
                     color='blue', alpha=0.1, label='±1 STD HC')
     axes[1].axvspan(mean_all_after - std_all_after, mean_all_after + std_all_after,
@@ -523,5 +742,5 @@ def plot_distributions_and_scatter(df_before, outliers_idx, output_dir, y_column
 
     plt.suptitle(f"Analyse Maladie:{disease} - {site} ({metric}- {bundle})")
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig(os.path.join(output_dir, f"{robust_method}_{float(error):.2f}_{site}_{bundle}.png"))
+    plt.savefig(os.path.join(output_dir, f"{test_index}_{robust_method}_{float(error):.2f}_{site}_{bundle}.png"))
     plt.close()

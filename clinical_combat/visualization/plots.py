@@ -586,6 +586,15 @@ def generate_boxplot(
 
     return fig, ax
 
+import re
+def extract_after_last_number(s):
+    # Cherche la dernière position d'un nombre
+    matches = list(re.finditer(r'\d+', s))
+    if matches:
+        last_match = matches[-1]
+        return s[last_match.end() + 1:]  # +1 pour enlever le underscore juste après
+    return s  # retourne la string au complet si aucun nombre trouvé
+
 
 def update_global_figure_style_and_save(
     fig,
@@ -663,12 +672,16 @@ def update_global_figure_style_and_save(
     prefix_title = ""
     if harmonization_type != "raw":
         prefix_title = "ComBAT-"
-
+    suff = extract_after_last_number(suffix_save)
+    if suff == "HC" and harmonization_type == "raw":
+        suff = "GROUND TRUTH"
     fig.fig.suptitle(
         prefix_title
         + harmonization_type.capitalize()
         + title
-        + bundle.replace("_", " ").replace("mni ", ""),
+        + bundle.replace("_", " ").replace("mni ", "")
+        +'\n'
+        + suff,
         fontsize=title_fontsize,
     )
 
