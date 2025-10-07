@@ -1,9 +1,15 @@
-# clinical-ComBAT
+# Clinical-ComBAT
 
 Reference package for ComBAT harmonization of clinical MRI data. It ships the
 ComBAT implementations for adapting clinical sites to a reference site
 along with ready-to-run scripts to prepare datasets, fit a model, apply the
-harmonization and analyze the outputs.
+harmonization and analyze the outputs. While Clinical-ComBAT was designed and tested for the harmonization of diffusion MRI metrics (like fractional anisotropy, mean diffusivity, apparent fiber density) it can also be used on other type of data like volumetric data.
+
+## References
+
+- Girard, G., Edde, M., Dumais, F., et al. (2025). *Clinical-ComBAT: a diffusion MRI harmonization method for clinical normative modeling applications*.  (to be submitted).
+- Jodoin, P.-M., Edde, M., Girard, G., et al. (2025). ComBAT harmonization for diffusion MRI: Challenges and best practices. (submitted). https://arxiv.org/abs/2505.14722
+- Fortin, J.-P., Parker, D., Tun¸c, B., et al. (2017). Harmonization of multi-site diffusion tensor imaging data. *NeuroImage*, 161, 149–170. https://doi.org/10.1016/j.neuroimage.2017.08.047
 
 ## Quick installation
 
@@ -48,7 +54,7 @@ sid,site,bundle,metric,mean,age,sex,handedness,disease
 - `metric`: diffusion metric (for example `md`, `fa`)
 - `mean`: numeric value per bundle (mean, median, etc.)
 - `age`, `sex`, `handedness`: covariates
-  - use integer values (1 or 2) for `sex` and `handedness`
+  - use integer values (1 or 2) for `sex` and `handedness`; when a covariate is unknown, add the column filled with `1`and the scripts will disable that effect automatically
 - `disease` acts as a flag; any row whose value is not `HC` is dropped before fitting the model
 
 `docs/data/` contains fully fledged examples (`CamCAN.md.raw.csv.gz` and
@@ -56,11 +62,11 @@ sid,site,bundle,metric,mean,age,sex,handedness,disease
 distribution.
 
 ## Choosing a ComBAT variant
-
+The code supports two harmonization modes, namely clinic and pairwise. In both cases, the procedure harmonizes data from a moving site onto a reference site.
 | Method | Description |
 | --- | --- |
-| `clinic` (default) | Harmonizes a moving site to a normative reference by fitting site-specific polynomial covariate models, anchoring variance with Bayesian priors suited to small cohorts, and auto-tuning the hyperparameters to keep the harmonized metrics consistent with the reference population. |
-| `pairwise` | Adaptation of the original ComBAT (Fortin et al., 2017) that still fits both sites together but explicitly anchors the harmonization to a chosen reference site. |
+| `clinic` (default) | Harmonizes a moving site to a normative reference following the Clinical-ComBAT method (Girard et al., 2025). It fits site-specific polynomial covariate models, anchors variance with Bayesian priors suited to small cohorts, and auto-tunes the hyperparameters to keep the harmonized metrics consistent with the reference population. |
+| `pairwise` | Adaptation of the original ComBAT (Fortin et al., 2017) that still fits both sites together but explicitly anchors the harmonization to a chosen reference site. For more details, see Jodoin et al. (2025), *ComBAT Harmonization for Diffusion MRI: Challenges and Best Practices* (arXiv:2505.14722). |
 
 Common options for both methods:
 - age filtering (`--limit_age_range`)
@@ -173,7 +179,7 @@ python scripts/combat_quick_apply.py docs/data/ShamCamCAN.md.raw.csv.gz \
     --out_dir harmonized/pairwise/
 ```
 
-### Evaluation and quality
+### Evaluation and quality control (QC) to assess the alignment of the harmonized population.
 
 - `combat_quick_QC.py`: reports Bhattacharyya distances between reference and moving datasets.
   - `ref_data` *(required)*: reference-site CSV (HC subjects only are used).
