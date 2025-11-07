@@ -30,9 +30,9 @@ RUN uv cache clean
 RUN uv pip install --upgrade pip setuptools==75.1.0 wheel setuptools_scm kiwisolver fonttools
 
 # Install combat
-RUN git clone https://github.com/arnaudbore/clinical-ComBAT.git
+RUN git clone https://github.com/scil-vital/clinical-ComBAT.git
 WORKDIR /clinical-ComBAT
-RUN git checkout update_organization_and_add_docker
+RUN git checkout 1.0.0
 RUN uv pip install -e . --no-build-isolation
 
 WORKDIR /

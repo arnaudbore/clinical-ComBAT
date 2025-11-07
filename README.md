@@ -100,8 +100,8 @@ Run the bundled example once to check your setup:
 ```bash
 # From the project root
 combat_quick \
-    src/clinical_data/data/CamCAN.md.raw.csv.gz \
-    src/clinical_data/data/ShamCamCAN.md.raw.csv.gz \
+    src/clinical_combat/data/CamCAN.md.raw.csv.gz \
+    src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
     --method clinic \
     --out_dir quickstart_demo/
 ```
@@ -142,8 +142,8 @@ each spawned command.
 Example:
 
 ```bash
-combat_quick src/clinical_data/data/CamCAN.md.raw.csv.gz \
-    src/clinical_data/data/ShamCamCAN.md.raw.csv.gz \
+combat_quick src/clinical_combat/data/CamCAN.md.raw.csv.gz \
+    src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
     --method clinic \
     --out_dir results/clinic_pipeline/
 ```
@@ -173,8 +173,8 @@ combat_quick src/clinical_data/data/CamCAN.md.raw.csv.gz \
 Example:
 
 ```bash
-combat_quick_fit src/clinical_data/data/CamCAN.md.raw.csv.gz \
-    src/clinical_data/data/ShamCamCAN.md.raw.csv.gz \
+combat_quick_fit src/clinical_combat/data/CamCAN.md.raw.csv.gz \
+    src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
     --method pairwise \
     --out_dir models/pairwise/
 ```
@@ -194,7 +194,7 @@ harmonized measurements (`site.metric.method.csv.gz` by default).
 Example:
 
 ```bash
-combat_quick_apply src/clinical_data/data/ShamCamCAN.md.raw.csv.gz \
+combat_quick_apply src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
     models/pairwise/ShamCamCAN-CamCAN.md.pairwise.model.csv \
     --out_dir harmonized/pairwise/
 ```
@@ -213,8 +213,8 @@ combat_quick_apply src/clinical_data/data/ShamCamCAN.md.raw.csv.gz \
   - `--verbose/-v` (default `WARNING`), `--overwrite/-f` (default disabled).
   - Example:
     ```bash
-    combat_quick_QC src/clinical_data/data/CamCAN.md.raw.csv.gz \
-        src/clinical_data/data/ShamCamCAN.md.raw.csv.gz \
+    combat_quick_QC src/clinical_combat/data/CamCAN.md.raw.csv.gz \
+        src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
         models/pairwise/ShamCamCAN-CamCAN.md.pairwise.model.csv \
         --out_dir qc_reports/
     ```
@@ -235,8 +235,8 @@ Common helper flags: each script accepts `-v/--verbose` (default `WARNING`) and 
   - `--no_background` (default disabled): export without background styling.
   - Example:
     ```bash
-    combat_visualize_data src/clinical_data/data/CamCAN.md.raw.csv.gz \
-        src/clinical_data/data/ShamCamCAN.md.raw.csv.gz \
+    combat_visualize_data src/clinical_combat/data/CamCAN.md.raw.csv.gz \
+        src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
         harmonized/pairwise/ShamCamCAN.md.pairwise.csv.gz \
         --bundles mni_AF_L mni_AF_R \
         --out_dir figures/data/
@@ -258,8 +258,8 @@ Common helper flags: each script accepts `-v/--verbose` (default `WARNING`) and 
   - `--no_background` (default disabled): export without background styling.
   - Example:
     ```bash
-    combat_visualize_model src/clinical_data/data/CamCAN.md.raw.csv.gz \
-        src/clinical_data/data/ShamCamCAN.md.raw.csv.gz \
+    combat_visualize_model src/clinical_combat/data/CamCAN.md.raw.csv.gz \
+        src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
         models/pairwise/ShamCamCAN-CamCAN.md.pairwise.model.csv \
         --out_dir figures/model/ \
         --only_models
@@ -286,8 +286,8 @@ Common helper flags: each script accepts `-v/--verbose` (default `WARNING`) and 
   - `--display_errors` (default disabled) & `--error_metric {uncertainty,bounds}` (default `uncertainty`): plot error bars for single-subject harmonization outputs.
   - Example:
     ```bash
-    combat_visualize_harmonization src/clinical_data/data/CamCAN.md.raw.csv.gz \
-        src/clinical_data/data/ShamCamCAN.md.raw.csv.gz \
+    combat_visualize_harmonization src/clinical_combat/data/CamCAN.md.raw.csv.gz \
+        src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
         harmonized/pairwise/ShamCamCAN.md.pairwise.csv.gz \
         --bundles all \
         --out_dir figures/harmonization/
@@ -299,42 +299,42 @@ Common helper flags: each script accepts `-v/--verbose` (default `WARNING`) and 
   - `in_file` *(required)*: dataset summarised. No optional switches.
   - Example:
     ```bash
-    combat_info src/clinical_data/data/CamCAN.md.raw.csv.gz
+    combat_info src/clinical_combat/data/CamCAN.md.raw.csv.gz
     ```
 
 ## Typical pipeline
 
 1. **Inspect the datasets**
    ```bash
-   combat_info src/clinical_data/data/CamCAN.md.raw.csv.gz
+   combat_info src/clinical_combat/data/CamCAN.md.raw.csv.gz
    ```
 2. **Fit a harmonization model**
    ```bash
    combat_quick_fit \
-       src/clinical_data/data/CamCAN.md.raw.csv.gz \
-       src/clinical_data/data/ShamCamCAN.md.raw.csv.gz \
+       src/clinical_combat/data/CamCAN.md.raw.csv.gz \
+       src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
        --method clinic \
        --out_dir out/models/
    ```
 3. **Apply the harmonization**
    ```bash
    combat_quick_apply \
-       src/clinical_data/data/ShamCamCAN.md.raw.csv.gz \
+       src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
        out/models/ShamCamCAN-CamCAN.md.clinic.model.csv \
        --out_dir out/harmonized/
    ```
 4. **Quality control**
    ```bash
    combat_quick_QC \
-       src/clinical_data/data/CamCAN.md.raw.csv.gz \
-       src/clinical_data/data/ShamCamCAN.md.raw.csv.gz \
+       src/clinical_combat/data/CamCAN.md.raw.csv.gz \
+       src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
        out/models/ShamCamCAN-CamCAN.md.clinic.model.csv
    ```
 5. **Visualize the results**
    ```bash
    combat_visualize_harmonization \
-       src/clinical_data/data/CamCAN.md.raw.csv.gz \
-       src/clinical_data/data/ShamCamCAN.md.raw.csv.gz \
+       src/clinical_combat/data/CamCAN.md.raw.csv.gz \
+       src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
        out/harmonized/ShamCamCAN.md.clinic.csv.gz \
        --out_dir out/figures/
    ```
