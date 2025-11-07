@@ -5,7 +5,7 @@
 Visualize mean value per site/manufacturer.
 
 example:
-combat_json_viz_manufacturer.py ../merged_jsons/fodf_afd_total.json
+combat_json_viz_manufacturer ../merged_jsons/fodf_afd_total.json
 updated_metaverse.csv
 --min_subject_per_site 5 --bundle mni_IIT_mask_skeletonFA --ages 50,100
 

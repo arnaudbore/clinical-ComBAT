@@ -26,15 +26,15 @@ Options --in_ref_harmonized
         - err_lower: absolute value of the negative difference_harmonized
         - err_upper: value of the positive difference_harmonized
     Uncertainty, err_lower and err_upper are used to plot error bars in the figure with option
-    --display_errors in the combat_visualize_age_curve.py script.
+    --display_errors in the combat_visualize_age_curve script.
 
 Examples:
 # Compute single subject harmonization with mean and standard deviation (default)
-combat_single_subject_harmonization.py /path/to/input.csv
+combat_single_subject_harmonization /path/to/input.csv
 # Compute single subject harmonization with median and median absolute deviation
-combat_single_subject_harmonization.py /path/to/input.csv --method median
+combat_single_subject_harmonization /path/to/input.csv --method median
 # Compute single subject harmonization with mean and standard deviation and compares with a reference
-combat_single_subject_harmonization.py /path/to/input.csv \
+combat_single_subject_harmonization /path/to/input.csv \
     --in_ref_harmonization /path/to/reference.csv
 
 """

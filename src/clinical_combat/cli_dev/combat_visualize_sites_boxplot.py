@@ -7,8 +7,8 @@ Each box corresponding to a site represents the average value of a metric for al
 bundles (average of bundles) before and after harmonization.
 
 example:
-combat_visualize_sites_boxplot.py fodf_afd_total.json
-combat_visualize_sites_boxplot.py fodf_afd_total.json --bundles mni_AF_L --diseases 'AD' \
+combat_visualize_sites_boxplot fodf_afd_total.json
+combat_visualize_sites_boxplot fodf_afd_total.json --bundles mni_AF_L --diseases 'AD' \
     --rename_reference_site Cam-CAN --meta sample/metaverse.csv
 """
 

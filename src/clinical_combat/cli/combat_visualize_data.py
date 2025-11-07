@@ -4,15 +4,15 @@
 Visualizes with scatterplot a list of raw or harmonized CSV files.
 
 # Default usage
-combat_visualize_data.py reference_site.raw.csv.gz moving_site1.raw.csv.gz moving_site2.raw.csv.gz
+combat_visualize_data reference_site.raw.csv.gz moving_site1.raw.csv.gz moving_site2.raw.csv.gz
                 moving_siteN.raw.csv.gz
 
 # To display all bundles
-combat_visualize_data.py reference_site.raw.csv.gz moving_site1.raw.csv.gz moving_site2.raw.csv.gz
+combat_visualize_data reference_site.raw.csv.gz moving_site1.raw.csv.gz moving_site2.raw.csv.gz
                          moving_siteN.raw.csv.gz --bundles all
 
 # To display only set of bundles
-combat_visualize_data.py reference_site.raw.csv.gz moving_site1.raw.csv.gz moving_site2.raw.csv.gz
+combat_visualize_data reference_site.raw.csv.gz moving_site1.raw.csv.gz moving_site2.raw.csv.gz
                             moving_siteN.raw.csv.gz --bundles mni_AF_L mni_AF_R
 """
 

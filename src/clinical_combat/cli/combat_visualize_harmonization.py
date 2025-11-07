@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Visualizes reference site (target) and moving site before (raw) and after (combat) harmonization.
-To view several sites at once, use combat_quick_visualize.py.
+To view several sites at once, use combat_quick_visualize.
 
 By default, the script displays the mean value (mean) and standard deviations (SD) per percentile,
 per metric and for the AF left bundle (mni_AF_L) for the reference and moving sites before (raw)
@@ -37,29 +37,29 @@ Display options:
     harmonization. For the moment, this option is only available for the --display_point option.
 
 # Default usage:
-combat_visualize_harmonization.py ref.raw.csv.gz moving.raw.csv.gz harmonization.results.csv
+combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz harmonization.results.csv
 
 --------------------------------
 
 Usage examples:
 # Output options:
-combat_visualize_harmonization.py ref.raw.csv.gz moving.raw.csv.gz harmonization.results.csv
+combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz harmonization.results.csv
                             --outname AgeCurve_AF_L --out_dir ./figures/ --add_suffix test
 
 # Display data for all bundles:
-combat_visualize_harmonization.py ref.raw.csv.gz moving.raw.csv.gz harmonization.results.csv
+combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz harmonization.results.csv
                             --bundles all
 
 # Display data for n bundles:
-combat_visualize_harmonization.py ref.raw.csv.gz moving.raw.csv.gz harmonization.results.csv
+combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz harmonization.results.csv
                             --bundles mni_AF_L mni_CC_L mni_CST_L
 
 # Display data without percentiles and disease:
-combat_visualize_harmonization.py ref.raw.csv.gz moving.raw.csv.gz harmonization.results.csv
+combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz harmonization.results.csv
                             --hide_disease --hide_percentiles
 
 # Display data moving with a scatterplot:
-combat_visualize_harmonization.py ref.raw.csv.gz moving.raw.csv.gz harmonization.results.csv
+combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz harmonization.results.csv
                             --display_point
 
 """

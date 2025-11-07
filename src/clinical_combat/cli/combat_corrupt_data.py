@@ -9,9 +9,9 @@ Generates an altered/modified version of the input site data based on three para
 The script returns the site data to 0 and then applies the slope, add and mult parameters.
 
 # Uasage Examples :
-combat_corrupt_data.py input.csv output.csv --mult 50 --add 30 --slope 10
-combat_corrupt_data.py input.csv output.csv --mult 150 --add 80 --slope -30 --nbr_sub 100
-combat_corrupt_data.py input.csv output.csv --mult 95 --add 125 --slope -40 --nbr_sub 50 \
+combat_corrupt_data input.csv output.csv --mult 50 --add 30 --slope 10
+combat_corrupt_data input.csv output.csv --mult 150 --add 80 --slope -30 --nbr_sub 100
+combat_corrupt_data input.csv output.csv --mult 95 --add 125 --slope -40 --nbr_sub 50 \
                        --site_name "new_site_name"
 """
 

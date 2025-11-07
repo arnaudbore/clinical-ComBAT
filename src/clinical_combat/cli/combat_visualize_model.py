@@ -6,18 +6,18 @@ The plot is a scatterplot, with each color representing a site (reference = blac
 default colors) and its corresponding model (same colors).
 
 # Default usage
-combat_visualize_model.py reference_site.raw.csv.gz moving_site.raw.csv.gz
+combat_visualize_model reference_site.raw.csv.gz moving_site.raw.csv.gz
 --models harmonization.model.csv
 
 --------------------------------
 
 Usage examples:
 # Set fixed color for reference and moving sites
-combat_visualize_model.py reference_site.raw.csv.gz moving_site.raw.csv.gz
+combat_visualize_model reference_site.raw.csv.gz moving_site.raw.csv.gz
 --models harmonization.model.csv --fixed_color r b
 
 # Show only models
-combat_visualize_model.py reference_site.raw.csv.gz moving_site.raw.csv.gz
+combat_visualize_model reference_site.raw.csv.gz moving_site.raw.csv.gz
 --models harmonization.model.csv --only_models --no_background
 """
 

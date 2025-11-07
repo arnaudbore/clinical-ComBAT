@@ -12,10 +12,10 @@ Harmonization methods:
 Examples:
 # Use the pairwise method to harmonize the moving site data to the reference site data 
 # (linear)
-combat_quick_fit.py reference_site.raw.csv.gz moving_site.raw.csv.gz --method pairwise
+combat_quick_fit reference_site.raw.csv.gz moving_site.raw.csv.gz --method pairwise
 
 # Use the clinic method to harmonize the moving site data to the reference site data (non-linear)
-combat_quick_fit.py reference_site.raw.csv.gz moving_site.raw.csv.gz --method clinic
+combat_quick_fit reference_site.raw.csv.gz moving_site.raw.csv.gz --method clinic
 """
 
 import argparse

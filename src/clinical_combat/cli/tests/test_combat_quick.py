@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import os
-import pathlib
 import shutil
 import subprocess
 import pandas as pd
@@ -9,19 +8,17 @@ import pandas as pd
 import numpy as np
 import numpy.testing as npt
 
-import clinical_combat
+from clinical_combat import COMBAT_ROOT
 
+data_path = os.path.join(COMBAT_ROOT, "src/clinical_combat/data/")
 
 def test_quick_combat_pairwise():
-    folder = pathlib.Path(clinical_combat.__file__).resolve().parent.parent
-    data_path = os.path.join(folder, "docs/data/")
-
-    out = os.path.join(folder, "scripts/tests/out/QuickCombat_pairwise")
+    out = os.path.join(COMBAT_ROOT, "src/clinical_combat/cli/tests/out/QuickCombat_pairwise")
     if os.path.exists(out):
         shutil.rmtree(out)
 
     cmd = (
-        "combat_quick.py "
+        "combat_quick "
         + data_path
         + "CamCAN.md.raw.csv.gz "
         + data_path
@@ -57,8 +54,8 @@ def test_quick_combat_pairwise():
     npt.assert_(os.path.exists(dist2), msg="Raw Bhattacharrya file not generated.")
 
     model_ = os.path.join(
-        folder,
-        "scripts/tests/target_out/QuickCombat_pairwise",
+        COMBAT_ROOT,
+        "src/clinical_combat/cli/tests/target_out/QuickCombat_pairwise",
         "ShamCamCAN-CamCAN.md.pairwise.model.csv",
     )
     a = np.loadtxt(model, dtype=str, delimiter=",")
@@ -66,8 +63,8 @@ def test_quick_combat_pairwise():
     npt.assert_array_almost_equal(a[2:, 1:].astype("float"), b[2:, 1:].astype("float"))
 
     data_ = os.path.join(
-        folder,
-        "scripts/tests/target_out/QuickCombat_pairwise",
+        COMBAT_ROOT,
+        "src/clinical_combat/cli/tests/target_out/QuickCombat_pairwise",
         "ShamCamCAN.md.pairwise.csv.gz",
     )
     a = pd.read_csv(data)["mean"].to_numpy()
@@ -76,15 +73,13 @@ def test_quick_combat_pairwise():
 
 
 def test_quick_combat_clinic():
-    folder = pathlib.Path(clinical_combat.__file__).resolve().parent.parent
-    data_path = os.path.join(folder, "docs/data/")
+    out = os.path.join(COMBAT_ROOT, "src/clinical_combat/cli/tests/out/QuickCombat_clinic")
 
-    out = os.path.join(folder, "scripts/tests/out/QuickCombat_clinic")
     if os.path.exists(out):
         shutil.rmtree(out)
 
     cmd = (
-        "combat_quick.py "
+        "combat_quick "
         + data_path
         + "CamCAN.md.raw.csv.gz "
         + data_path
@@ -120,8 +115,8 @@ def test_quick_combat_clinic():
     npt.assert_(os.path.exists(dist2), msg="Raw Bhattacharrya file not generated.")
 
     model_ = os.path.join(
-        folder,
-        "scripts/tests/target_out/QuickCombat_clinic",
+        COMBAT_ROOT,
+        "src/clinical_combat/cli/tests/target_out/QuickCombat_clinic",
         "ShamCamCAN-CamCAN.md.clinic.model.csv",
     )
     a = np.loadtxt(model, dtype=str, delimiter=",")
@@ -129,8 +124,8 @@ def test_quick_combat_clinic():
     npt.assert_array_almost_equal(a[2:, 1:].astype("float"), b[2:, 1:].astype("float"))
 
     data_ = os.path.join(
-        folder,
-        "scripts/tests/target_out/QuickCombat_clinic",
+        COMBAT_ROOT,
+        "src/clinical_combat/cli/tests/target_out/QuickCombat_clinic",
         "ShamCamCAN.md.clinic.csv.gz",
     )
     a = pd.read_csv(data)["mean"].to_numpy()
@@ -139,14 +134,13 @@ def test_quick_combat_clinic():
 
 
 def test_visualize_data():
-    folder = pathlib.Path(clinical_combat.__file__).resolve().parent.parent
-    data_path = os.path.join(folder, "docs/data/")
-
-    out = os.path.join(folder, "scripts/tests/out/visualized_data")
+    out = os.path.join(COMBAT_ROOT, "src/clinical_combat/cli/tests/out/visualized_data")
+    
     if os.path.exists(out):
         shutil.rmtree(out)
+
     cmd = (
-        "combat_visualize_data.py "
+        "combat_visualize_data "
         + data_path
         + "CamCAN.md.raw.csv.gz "
         + data_path
@@ -163,7 +157,7 @@ def test_visualize_data():
         shutil.rmtree(out)
 
     cmd = (
-        "combat_visualize_data.py "
+        "combat_visualize_data "
         + data_path
         + "CamCAN.md.raw.csv.gz "
         + data_path
@@ -179,14 +173,13 @@ def test_visualize_data():
 
 
 def test_corrupt_data():
-    folder = pathlib.Path(clinical_combat.__file__).resolve().parent.parent
-    data_path = os.path.join(folder, "docs/data/")
+    out = os.path.join(COMBAT_ROOT, "src/clinical_combat/cli/tests/out/corrupt_data")
 
-    out = os.path.join(folder, "scripts/tests/out/corrupt_data")
     if os.path.exists(out):
         shutil.rmtree(out)
+
     cmd = (
-        "combat_corrupt_data.py "
+        "combat_corrupt_data "
         + data_path
         + "CamCAN.md.raw.csv.gz "
         + out
@@ -198,8 +191,8 @@ def test_corrupt_data():
     npt.assert_(os.path.exists(data), msg="corrupt data not generated.")
 
     data_ = os.path.join(
-        folder,
-        "scripts/tests/target_out/corrupt_data",
+        COMBAT_ROOT,
+        "src/clinical_combat/cli/tests/target_out/corrupt_data",
         "corruptCamCAN.md.raw.csv.gz",
     )
     a = pd.read_csv(data)["mean"].to_numpy()
@@ -208,15 +201,14 @@ def test_corrupt_data():
 
 
 def test_info():
-    folder = pathlib.Path(clinical_combat.__file__).resolve().parent.parent
-    data_path = os.path.join(folder, "docs/data/")
+    out = os.path.join(COMBAT_ROOT, "src/clinical_combat/cli/tests/target_out/info")
 
-    out = os.path.join(folder, "scripts/tests/out/info")
     if os.path.exists(out):
         shutil.rmtree(out)
     os.makedirs(out, exist_ok=True)
+
     cmd = (
-        "combat_info.py "
+        "combat_info"
         + data_path
         + "CamCAN.md.raw.csv.gz "
         + "> "
@@ -226,8 +218,8 @@ def test_info():
     subprocess.call(cmd, shell=True)
 
     output_ = os.path.join(
-        folder,
-        "scripts/tests/target_out/info",
+        COMBAT_ROOT,
+        "src/clinical_combat/cli/tests/target_out/info",
         "output.txt",
     )
 

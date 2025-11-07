@@ -12,7 +12,7 @@ for all bundles (group mean) before and after harmonization.
 
 
 example:
-combat_visualize_errors_cohensd.py adni_md.csv
+combat_visualize_errors_cohensd adni_md.csv
 """
 
 import argparse

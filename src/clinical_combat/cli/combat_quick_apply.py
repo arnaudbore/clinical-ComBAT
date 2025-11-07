@@ -4,7 +4,7 @@
 Apply a precompute harmonization model to a site data.
 
 Example:
-combat_quick_apply.py moving_site.raw.csv.gz moving_site.metric.model.csv
+combat_quick_apply moving_site.raw.csv.gz moving_site.metric.model.csv
 
 
 """

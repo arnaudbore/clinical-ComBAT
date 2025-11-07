@@ -5,7 +5,7 @@
 Visualize density plot (KDE) per site for all bundles (HC).
 
 example:
-combat_visualize_density.py adni_md.csv --bundles mni_AF_L mni_AF_R
+combat_visualize_density adni_md.csv --bundles mni_AF_L mni_AF_R
 """
 import argparse
 from itertools import product
