@@ -32,7 +32,7 @@ RUN uv pip install --upgrade pip setuptools==75.1.0 wheel setuptools_scm kiwisol
 # Install combat
 RUN git clone https://github.com/scil-vital/clinical-ComBAT.git
 WORKDIR /clinical-ComBAT
-RUN git checkout 1.0.0
+RUN git checkout 1.0.1
 RUN uv pip install -e . --no-build-isolation
 
 WORKDIR /
