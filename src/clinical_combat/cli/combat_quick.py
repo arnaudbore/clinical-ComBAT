@@ -56,12 +56,12 @@ def _build_arg_parser():
     p.add_argument("--output_model_filename",
                    default="",
                    help="Output CSV model filename. "
-                        "['ref_site-moving-site.metric_name.model.csv']")
+                        "['ref_site-moving-site.metric_name.method.model.csv.gz']")
 
     p.add_argument("--output_results_filename",
                    default="",
                    help="Output CSV of the harmonized data filename. "
-                        "['ref_site-moving-site.metric_name.model.raw/harmonized.csv']")
+                        "['ref_site-moving-site.metric_name.method.harmonized.csv.gz']")
 
     p.add_argument("-m", "--method",
                    default="clinic",
@@ -116,8 +116,7 @@ def _build_arg_parser():
     p.add_argument("--bundles",
                    nargs="+",
                    help="List of bundle to use for figures. "
-                        "To plot all bundles use --bundles all. "
-                        "By default, it takes the second bundle.")
+                        "By default, it takes all bundles.")
     p.add_argument("--degree_qc",
                    type=int,
                    default=0,
@@ -145,9 +144,8 @@ def main():
 
     all_bundles = list(ref_data.bundle.unique())
     if args.bundles is None:
-        args.bundles = all_bundles[1:2]
-    elif args.bundles == ["all"]:
         args.bundles = all_bundles
+
     for b in args.bundles:
         if b not in all_bundles:
             args.bundles.remove(b)
@@ -167,7 +165,7 @@ def main():
             + ref_data.metric.unique()[0]
             + "."
             + args.method
-            + ".model.csv"
+            + ".model.csv.gz"
         )
     # output data filename
     if len(args.output_results_filename) == 0:
