@@ -7,11 +7,6 @@ Visualizes with scatterplot a list of raw or harmonized CSV files.
 combat_visualize_data reference_site.raw.csv.gz moving_site1.raw.csv.gz \
                       moving_site2.raw.csv.gz moving_siteN.raw.csv.gz
 
-# To display all bundles
-combat_visualize_data reference_site.raw.csv.gz moving_site1.raw.csv.gz \
-                      moving_site2.raw.csv.gz moving_siteN.raw.csv.gz \
-                      --bundles all
-
 # To display only set of bundles
 combat_visualize_data reference_site.raw.csv.gz moving_site1.raw.csv.gz \
                       moving_site2.raw.csv.gz moving_siteN.raw.csv.gz \
@@ -43,8 +38,7 @@ def _build_arg_parser():
     p.add_argument("--bundles",
                    nargs="+",
                    help="List of bundle to use for figures. "
-                        "To plot all bundles use --bundles all. "
-                        "By default, it takes the second bundle.")
+                        "By default, it takes all bundles.")
 
     out = p.add_argument_group(title="Options for output figure.")
     out.add_argument("--out_dir",
@@ -108,9 +102,8 @@ def main():
 
     all_bundles = list(df.bundle.unique())
     if args.bundles is None:
-        args.bundles = all_bundles[1:2]
-    elif args.bundles == ["all"]:
         args.bundles = all_bundles
+
     for b in args.bundles:
         if b not in all_bundles:
             args.bundles.remove(b)

@@ -43,23 +43,19 @@ combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz *.method.harmoni
 
 Usage examples:
 # Output options:
-combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz *method.harmonized.csv
+combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz *method.harmonized.csv.gz
                             --outname AgeCurve_AF_L --out_dir ./figures/ --add_suffix test
 
-# Display data for all bundles:
-combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz *method.harmonized.csv
-                            --bundles all
-
 # Display data for n bundles:
-combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz *method.harmonized.csv
+combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz *method.harmonized.csv.gz
                             --bundles AF_L CC_L CST_L
 
 # Display data without percentiles and disease:
-combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz *method.harmonized.csv
+combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz *method.harmonized.csv.gz
                             --hide_disease --hide_percentiles
 
 # Display data moving with a scatterplot:
-combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz *method.harmonized.csv
+combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz *method.harmonized.csv.gz
                             --display_point
 
 """
@@ -142,8 +138,8 @@ def _build_arg_parser():
                            " [%(default)s].")
     data.add_argument("--bundles",
                       nargs="+",
-                      help="List of bundle to use for figures. To plot all bundles use "
-                      "--bundles all. By default, it takes the second bundle.")
+                      help="List of bundle to use for figures."
+                      "By default, it takes all bundles.")
     data.add_argument("--sexes",
                       nargs="+",
                       help="List of sex to use. All by default.")
@@ -246,9 +242,8 @@ def main():
 
     all_bundles = np.intersect1d(df_ref.bundle.unique(), df_moving.bundle.unique())
     if args.bundles is None:
-        args.bundles = all_bundles[1:2]
-    elif args.bundles == ["all"]:
         args.bundles = all_bundles
+
     for b in args.bundles:
         if b not in all_bundles:
             args.bundles.remove(b)
