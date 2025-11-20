@@ -5,13 +5,13 @@ Visualizes reference site (target) and moving site before (raw) and after (comba
 To view several sites at once, use combat_quick_visualize.
 
 By default, the script displays the mean value (mean) and standard deviations (SD) per percentile,
-per metric and for the AF left bundle (mni_AF_L) for the reference and moving sites before (raw)
+per metric and for the AF left bundle (AF_L) for the reference and moving sites before (raw)
 and after (harmonized, ComBAT) harmonization, using a dynamic sliding window.
 
 Input:
     Reference corresponds to data from the site used as reference.
     Moving data - provide 2 inputs: raw data csv (*.raw.csv) and
-                                    harmonized data csv (*.result.csv from qc_apply script).
+                                    harmonized data csv (*.harmonized.csv from qc_apply script).
 
 Output:
     Outname: Corresponds to the prefix used to save generated figures.
@@ -37,29 +37,25 @@ Display options:
     harmonization. For the moment, this option is only available for the --display_point option.
 
 # Default usage:
-combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz harmonization.results.csv
+combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz *.method.harmonized.csv
 
 --------------------------------
 
 Usage examples:
 # Output options:
-combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz harmonization.results.csv
+combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz *method.harmonized.csv.gz
                             --outname AgeCurve_AF_L --out_dir ./figures/ --add_suffix test
 
-# Display data for all bundles:
-combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz harmonization.results.csv
-                            --bundles all
-
 # Display data for n bundles:
-combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz harmonization.results.csv
-                            --bundles mni_AF_L mni_CC_L mni_CST_L
+combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz *method.harmonized.csv.gz
+                            --bundles AF_L CC_L CST_L
 
 # Display data without percentiles and disease:
-combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz harmonization.results.csv
+combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz *method.harmonized.csv.gz
                             --hide_disease --hide_percentiles
 
 # Display data moving with a scatterplot:
-combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz harmonization.results.csv
+combat_visualize_harmonization ref.raw.csv.gz moving.raw.csv.gz *method.harmonized.csv.gz
                             --display_point
 
 """
@@ -142,8 +138,8 @@ def _build_arg_parser():
                            " [%(default)s].")
     data.add_argument("--bundles",
                       nargs="+",
-                      help="List of bundle to use for figures. To plot all bundles use "
-                      "--bundles all. ['mni_IIT_mask_skeletonFA'].")
+                      help="List of bundle to use for figures."
+                      "By default, it takes all bundles.")
     data.add_argument("--sexes",
                       nargs="+",
                       help="List of sex to use. All by default.")
@@ -245,17 +241,24 @@ def main():
     metric = df.metric.unique()[0]
 
     all_bundles = np.intersect1d(df_ref.bundle.unique(), df_moving.bundle.unique())
+
     if args.bundles is None:
-        args.bundles = ["mni_IIT_mask_skeletonFA"]
+        for b in all_bundles:
+            if "skeleton" in b:
+                args.bundles = [b]
+                break
     elif args.bundles == ["all"]:
         args.bundles = all_bundles
+
     for b in args.bundles:
         if b not in all_bundles:
             args.bundles.remove(b)
             logging.warning("Bundle %s not founded in the data.", b)
+
     if len(args.bundles) == 0:
         args.bundles = all_bundles[0:1]
-        logging.warning("No valid input bundle. Selecting bundle %s", args.bundles)
+        logging.warning("No valid input bundle. "
+                        "Selecting bundle %s", args.bundles)
 
     if args.sexes is None:
         args.sexes = list(np.unique(df.sex))

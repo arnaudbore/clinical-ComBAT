@@ -50,7 +50,7 @@ def _build_arg_parser():
     p.add_argument("-o", "--output_model_filename",
                    default="",
                    help="Output CSV model filename."
-                        "['ref_site-moving-site.model.metric_name.csv']")
+                        "['ref_site-moving-site.model.metric_name.method.model.csv']")
     p.add_argument("-m", "--method",
                    default="clinic",
                    choices=["pairwise", "clinic"],
