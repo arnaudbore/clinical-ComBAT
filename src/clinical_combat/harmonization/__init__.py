@@ -4,7 +4,7 @@ from __future__ import absolute_import
 import ast
 
 from clinical_combat.harmonization.CombatClinic import CombatClinic
-from src.clinical_combat.harmonization.CombatPairwise import CombatPairwise
+from clinical_combat.harmonization.CombatPairwise import CombatPairwise
 
 
 def from_model_name(
