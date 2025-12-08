@@ -30,17 +30,17 @@ def test_combat_pairwise():
     subprocess.call(cmd, shell=True)
 
     model = os.path.join(out, "ModifiedCamCAN-CamCAN.md.pairwise.model.csv")
-    data = os.path.join(out, "ModifiedCamCAN.md.pairwise.csv.gz")
+    data = os.path.join(out, "ModifiedCamCAN.md.pairwise.harmonized.csv.gz")
     fig1 = os.path.join(
         out, "AgeCurve_CamCAN-ModifiedCamCAN_raw_md_mniIITmaskskeletonFA.png"
     )
     fig2 = os.path.join(
-        out, "AgeCurve_CamCAN-ModifiedCamCAN_pairwise_md_mniIITmaskskeletonFA.png"
+        out, "AgeCurve_CamCAN-ModifiedCamCAN_pairwise_harmonized_md_mniIITmaskskeletonFA.png"
     )
     fig3 = os.path.join(
-        out, "DataModels_CamCAN-ModifiedCamCAN_pairwise_md_mniIITmaskskeletonFA.png"
+        out, "DataModels_CamCAN-ModifiedCamCAN_pairwise_harmonized_md_mniIITmaskskeletonFA.png"
     )
-    dist1 = os.path.join(out, "ModifiedCamCAN.md.pairwise.bhattacharrya.txt")
+    dist1 = os.path.join(out, "ModifiedCamCAN.md.pairwise.harmonized.bhattacharrya.txt")
     dist2 = os.path.join(out, "ModifiedCamCAN.md.raw.bhattacharrya.txt")
 
     npt.assert_(os.path.exists(model), msg="Model file not generated.")
@@ -91,17 +91,17 @@ def test_combat_clinic():
     subprocess.call(cmd, shell=True)
 
     model = os.path.join(out, "ModifiedCamCAN-CamCAN.md.clinic.model.csv")
-    data = os.path.join(out, "ModifiedCamCAN.md.clinic.csv.gz")
+    data = os.path.join(out, "ModifiedCamCAN.md.clinic.harmonized.csv.gz")
     fig1 = os.path.join(
         out, "AgeCurve_CamCAN-ModifiedCamCAN_raw_md_mniIITmaskskeletonFA.png"
     )
     fig2 = os.path.join(
-        out, "AgeCurve_CamCAN-ModifiedCamCAN_clinic_md_mniIITmaskskeletonFA.png"
+        out, "AgeCurve_CamCAN-ModifiedCamCAN_clinic_harmonized_md_mniIITmaskskeletonFA.png"
     )
     fig3 = os.path.join(
-        out, "DataModels_CamCAN-ModifiedCamCAN_clinic_md_mniIITmaskskeletonFA.png"
+        out, "DataModels_CamCAN-ModifiedCamCAN_clinic_harmonized_md_mniIITmaskskeletonFA.png"
     )
-    dist1 = os.path.join(out, "ModifiedCamCAN.md.clinic.bhattacharrya.txt")
+    dist1 = os.path.join(out, "ModifiedCamCAN.md.clinic.harmonized.bhattacharrya.txt")
     dist2 = os.path.join(out, "ModifiedCamCAN.md.raw.bhattacharrya.txt")
 
     npt.assert_(os.path.exists(model), msg="Model file not generated.")
@@ -150,7 +150,7 @@ def test_visualize_data():
         + " --display_marginal_hist -f"
     )
     subprocess.call(cmd, shell=True)
-    fig1 = os.path.join(out, "Dataset_2-sites_md_mniIITmaskskeletonFA.png")
+    fig1 = os.path.join(out, "Dataset_2-sites_harmonized_md_mniIITmaskskeletonFA.png")
     npt.assert_(os.path.exists(fig1), msg="combat_visualize_data fig not generated.")
 
     if os.path.exists(out):
@@ -168,7 +168,7 @@ def test_visualize_data():
     )
     subprocess.call(cmd, shell=True)
 
-    fig1 = os.path.join(out, "Dataset_2-sites_md_mniIITmaskskeletonFA.png")
+    fig1 = os.path.join(out, "Dataset_2-sites_harmonized_md_mniIITmaskskeletonFA.png")
     npt.assert_(os.path.exists(fig1), msg="combat_visualize_data fig not generated.")
 
 
