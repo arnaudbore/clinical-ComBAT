@@ -78,7 +78,7 @@ sid,site,bundle,metric,mean,age,sex,handedness,disease
 - `disease` acts as a flag; any row whose value is not `HC` is dropped before fitting the model
 
 `src/clinical_combat/data/` contains fully fledged examples (`CamCAN.md.raw.csv.gz` and
-`ShamCamCAN.md.raw.csv.gz`) illustrating the column layout
+`ModifiedCamCAN.md.raw.csv.gz`) illustrating the column layout
 distribution.
 
 ## Choosing a ComBAT variant
@@ -101,14 +101,14 @@ Run the bundled example once to check your setup:
 # From the project root
 combat_pipeline \
     src/clinical_combat/data/CamCAN.md.raw.csv.gz \
-    src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
+    src/clinical_combat/data/ModifiedCamCAN.md.raw.csv.gz \
     --method clinic \
     --out_dir quickstart_demo/
 ```
 
 This produces:
-- a fitted model (`quickstart_demo/ShamCamCAN-CamCAN.md.clinic.model.csv`)
-- harmonized data (`quickstart_demo/ShamCamCAN.md.clinic.csv.gz`)
+- a fitted model (`quickstart_demo/ModifiedCamCAN-CamCAN.md.clinic.model.csv`)
+- harmonized data (`quickstart_demo/ModifiedCamCAN.md.clinic.csv.gz`)
 - QC metrics and figures inside `quickstart_demo/`
 
 ## Main scripts
@@ -143,7 +143,7 @@ Example:
 
 ```bash
 combat_pipeline src/clinical_combat/data/CamCAN.md.raw.csv.gz \
-    src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
+    src/clinical_combat/data/ModifiedCamCAN.md.raw.csv.gz \
     --method clinic \
     --out_dir results/clinic_pipeline/
 ```
@@ -174,7 +174,7 @@ Example:
 
 ```bash
 combat_fit src/clinical_combat/data/CamCAN.md.raw.csv.gz \
-    src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
+    src/clinical_combat/data/ModifiedCamCAN.md.raw.csv.gz \
     --method pairwise \
     --out_dir models/pairwise/
 ```
@@ -194,8 +194,8 @@ harmonized measurements (`site.metric.method.csv.gz` by default).
 Example:
 
 ```bash
-combat_apply src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
-    models/pairwise/ShamCamCAN-CamCAN.md.pairwise.model.csv \
+combat_apply src/clinical_combat/data/ModifiedCamCAN.md.raw.csv.gz \
+    models/pairwise/ModifiedCamCAN-CamCAN.md.pairwise.model.csv \
     --out_dir harmonized/pairwise/
 ```
 
@@ -214,8 +214,8 @@ combat_apply src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
   - Example:
     ```bash
     combat_QC src/clinical_combat/data/CamCAN.md.raw.csv.gz \
-        src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
-        models/pairwise/ShamCamCAN-CamCAN.md.pairwise.model.csv \
+        src/clinical_combat/data/ModifiedCamCAN.md.raw.csv.gz \
+        models/pairwise/ModifiedCamCAN-CamCAN.md.pairwise.model.csv \
         --out_dir qc_reports/
     ```
 
@@ -236,8 +236,8 @@ Common helper flags: each script accepts `-v/--verbose` (default `WARNING`) and 
   - Example:
     ```bash
     combat_visualize_data src/clinical_combat/data/CamCAN.md.raw.csv.gz \
-        src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
-        harmonized/pairwise/ShamCamCAN.md.pairwise.csv.gz \
+        src/clinical_combat/data/ModifiedCamCAN.md.raw.csv.gz \
+        harmonized/pairwise/ModifiedCamCAN.md.pairwise.csv.gz \
         --bundles mni_AF_L mni_AF_R \
         --out_dir figures/data/
     ```
@@ -259,8 +259,8 @@ Common helper flags: each script accepts `-v/--verbose` (default `WARNING`) and 
   - Example:
     ```bash
     combat_visualize_model src/clinical_combat/data/CamCAN.md.raw.csv.gz \
-        src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
-        models/pairwise/ShamCamCAN-CamCAN.md.pairwise.model.csv \
+        src/clinical_combat/data/ModifiedCamCAN.md.raw.csv.gz \
+        models/pairwise/ModifiedCamCAN-CamCAN.md.pairwise.model.csv \
         --out_dir figures/model/ \
         --only_models
     ```
@@ -287,8 +287,8 @@ Common helper flags: each script accepts `-v/--verbose` (default `WARNING`) and 
   - Example:
     ```bash
     combat_visualize_harmonization src/clinical_combat/data/CamCAN.md.raw.csv.gz \
-        src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
-        harmonized/pairwise/ShamCamCAN.md.pairwise.csv.gz \
+        src/clinical_combat/data/ModifiedCamCAN.md.raw.csv.gz \
+        harmonized/pairwise/ModifiedCamCAN.md.pairwise.csv.gz \
         --bundles all \
         --out_dir figures/harmonization/
     ```
@@ -312,30 +312,30 @@ Common helper flags: each script accepts `-v/--verbose` (default `WARNING`) and 
    ```bash
    combat_fit \
        src/clinical_combat/data/CamCAN.md.raw.csv.gz \
-       src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
+       src/clinical_combat/data/ModifiedCamCAN.md.raw.csv.gz \
        --method clinic \
        --out_dir out/models/
    ```
 3. **Apply the harmonization**
    ```bash
    combat_apply \
-       src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
-       out/models/ShamCamCAN-CamCAN.md.clinic.model.csv \
+       src/clinical_combat/data/ModifiedCamCAN.md.raw.csv.gz \
+       out/models/ModifiedCamCAN-CamCAN.md.clinic.model.csv \
        --out_dir out/harmonized/
    ```
 4. **Quality control**
    ```bash
    combat_QC \
        src/clinical_combat/data/CamCAN.md.raw.csv.gz \
-       src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
-       out/models/ShamCamCAN-CamCAN.md.clinic.model.csv
+       src/clinical_combat/data/ModifiedCamCAN.md.raw.csv.gz \
+       out/models/ModifiedCamCAN-CamCAN.md.clinic.model.csv
    ```
 5. **Visualize the results**
    ```bash
    combat_visualize_harmonization \
        src/clinical_combat/data/CamCAN.md.raw.csv.gz \
-       src/clinical_combat/data/ShamCamCAN.md.raw.csv.gz \
-       out/harmonized/ShamCamCAN.md.clinic.csv.gz \
+       src/clinical_combat/data/ModifiedCamCAN.md.raw.csv.gz \
+       out/harmonized/ModifiedCamCAN.md.clinic.csv.gz \
        --out_dir out/figures/
    ```
 

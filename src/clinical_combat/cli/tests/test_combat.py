@@ -22,26 +22,26 @@ def test_combat_pairwise():
         + data_path
         + "CamCAN.md.raw.csv.gz "
         + data_path
-        + "ShamCamCAN.md.raw.csv.gz "
+        + "ModifiedCamCAN.md.raw.csv.gz "
         + "-m pairwise "
         + "--out_dir "
         + out
     )
     subprocess.call(cmd, shell=True)
 
-    model = os.path.join(out, "ShamCamCAN-CamCAN.md.pairwise.model.csv")
-    data = os.path.join(out, "ShamCamCAN.md.pairwise.csv.gz")
+    model = os.path.join(out, "ModifiedCamCAN-CamCAN.md.pairwise.model.csv")
+    data = os.path.join(out, "ModifiedCamCAN.md.pairwise.csv.gz")
     fig1 = os.path.join(
-        out, "AgeCurve_CamCAN-ShamCamCAN_raw_md_mniIITmaskskeletonFA.png"
+        out, "AgeCurve_CamCAN-ModifiedCamCAN_raw_md_mniIITmaskskeletonFA.png"
     )
     fig2 = os.path.join(
-        out, "AgeCurve_CamCAN-ShamCamCAN_pairwise_md_mniIITmaskskeletonFA.png"
+        out, "AgeCurve_CamCAN-ModifiedCamCAN_pairwise_md_mniIITmaskskeletonFA.png"
     )
     fig3 = os.path.join(
-        out, "DataModels_CamCAN-ShamCamCAN_pairwise_md_mniIITmaskskeletonFA.png"
+        out, "DataModels_CamCAN-ModifiedCamCAN_pairwise_md_mniIITmaskskeletonFA.png"
     )
-    dist1 = os.path.join(out, "ShamCamCAN.md.pairwise.bhattacharrya.txt")
-    dist2 = os.path.join(out, "ShamCamCAN.md.raw.bhattacharrya.txt")
+    dist1 = os.path.join(out, "ModifiedCamCAN.md.pairwise.bhattacharrya.txt")
+    dist2 = os.path.join(out, "ModifiedCamCAN.md.raw.bhattacharrya.txt")
 
     npt.assert_(os.path.exists(model), msg="Model file not generated.")
     npt.assert_(os.path.exists(data), msg="Harmonized data file not generated.")
@@ -56,7 +56,7 @@ def test_combat_pairwise():
     model_ = os.path.join(
         COMBAT_ROOT,
         "src/clinical_combat/cli/tests/target_out/Combat_pairwise",
-        "ShamCamCAN-CamCAN.md.pairwise.model.csv",
+        "ModifiedCamCAN-CamCAN.md.pairwise.model.csv",
     )
     a = np.loadtxt(model, dtype=str, delimiter=",")
     b = np.loadtxt(model_, dtype=str, delimiter=",")
@@ -65,7 +65,7 @@ def test_combat_pairwise():
     data_ = os.path.join(
         COMBAT_ROOT,
         "src/clinical_combat/cli/tests/target_out/Combat_pairwise",
-        "ShamCamCAN.md.pairwise.csv.gz",
+        "ModifiedCamCAN.md.pairwise.csv.gz",
     )
     a = pd.read_csv(data)["mean"].to_numpy()
     b = pd.read_csv(data_)["mean"].to_numpy()
@@ -83,26 +83,26 @@ def test_combat_clinic():
         + data_path
         + "CamCAN.md.raw.csv.gz "
         + data_path
-        + "ShamCamCAN.md.raw.csv.gz "
+        + "ModifiedCamCAN.md.raw.csv.gz "
         + "-m clinic "
         + "--out_dir "
         + out
     )
     subprocess.call(cmd, shell=True)
 
-    model = os.path.join(out, "ShamCamCAN-CamCAN.md.clinic.model.csv")
-    data = os.path.join(out, "ShamCamCAN.md.clinic.csv.gz")
+    model = os.path.join(out, "ModifiedCamCAN-CamCAN.md.clinic.model.csv")
+    data = os.path.join(out, "ModifiedCamCAN.md.clinic.csv.gz")
     fig1 = os.path.join(
-        out, "AgeCurve_CamCAN-ShamCamCAN_raw_md_mniIITmaskskeletonFA.png"
+        out, "AgeCurve_CamCAN-ModifiedCamCAN_raw_md_mniIITmaskskeletonFA.png"
     )
     fig2 = os.path.join(
-        out, "AgeCurve_CamCAN-ShamCamCAN_clinic_md_mniIITmaskskeletonFA.png"
+        out, "AgeCurve_CamCAN-ModifiedCamCAN_clinic_md_mniIITmaskskeletonFA.png"
     )
     fig3 = os.path.join(
-        out, "DataModels_CamCAN-ShamCamCAN_clinic_md_mniIITmaskskeletonFA.png"
+        out, "DataModels_CamCAN-ModifiedCamCAN_clinic_md_mniIITmaskskeletonFA.png"
     )
-    dist1 = os.path.join(out, "ShamCamCAN.md.clinic.bhattacharrya.txt")
-    dist2 = os.path.join(out, "ShamCamCAN.md.raw.bhattacharrya.txt")
+    dist1 = os.path.join(out, "ModifiedCamCAN.md.clinic.bhattacharrya.txt")
+    dist2 = os.path.join(out, "ModifiedCamCAN.md.raw.bhattacharrya.txt")
 
     npt.assert_(os.path.exists(model), msg="Model file not generated.")
     npt.assert_(os.path.exists(data), msg="Harmonized data file not generated.")
@@ -117,7 +117,7 @@ def test_combat_clinic():
     model_ = os.path.join(
         COMBAT_ROOT,
         "src/clinical_combat/cli/tests/target_out/Combat_clinic",
-        "ShamCamCAN-CamCAN.md.clinic.model.csv",
+        "ModifiedCamCAN-CamCAN.md.clinic.model.csv",
     )
     a = np.loadtxt(model, dtype=str, delimiter=",")
     b = np.loadtxt(model_, dtype=str, delimiter=",")
@@ -126,7 +126,7 @@ def test_combat_clinic():
     data_ = os.path.join(
         COMBAT_ROOT,
         "src/clinical_combat/cli/tests/target_out/Combat_clinic",
-        "ShamCamCAN.md.clinic.csv.gz",
+        "ModifiedCamCAN.md.clinic.csv.gz",
     )
     a = pd.read_csv(data)["mean"].to_numpy()
     b = pd.read_csv(data_)["mean"].to_numpy()
@@ -144,7 +144,7 @@ def test_visualize_data():
         + data_path
         + "CamCAN.md.raw.csv.gz "
         + data_path
-        + "ShamCamCAN.md.raw.csv.gz "
+        + "ModifiedCamCAN.md.raw.csv.gz "
         + "--out_dir "
         + out
         + " --display_marginal_hist -f"
@@ -161,7 +161,7 @@ def test_visualize_data():
         + data_path
         + "CamCAN.md.raw.csv.gz "
         + data_path
-        + "ShamCamCAN.md.raw.csv.gz "
+        + "ModifiedCamCAN.md.raw.csv.gz "
         + "--out_dir "
         + out
         + " --display_marginal_hist --hide_disease"
