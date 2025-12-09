@@ -6,6 +6,8 @@ Script to compute the transfer function from a moving site to a reference site.
 Harmonization methods:
     pairwise: uses both moving and reference data to fit the covariate
              regression parameters (Beta_mov).
+             Jodoin et al., 2025 method,
+             see https://www.nature.com/articles/s41598-025-25400-x
     clinical: uses a priori from the reference site to fit the moving site
             (Beta_mov, variance)
 

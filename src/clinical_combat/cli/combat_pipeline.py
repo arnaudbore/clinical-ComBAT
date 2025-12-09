@@ -12,8 +12,8 @@ Harmonization methods:
     pairwise:
         uses both moving and reference data to fit the
         covariates regression parameters (Beta_mov).
-        Fortin et al., 2017 method,
-        see https://pubmed.ncbi.nlm.nih.gov/28826946/
+        Jodoin et al., 2025 method,
+        see https://www.nature.com/articles/s41598-025-25400-x
     clinical (default):
         uses a priori from the reference site to fit the moving site
         (Beta_mov, variance)

@@ -5,7 +5,9 @@ Reference package for ComBAT harmonization of clinical MRI data. It ships the Co
 ## References
 
 - Girard, G., Edde, M., Dumais, F., et al. (2025). *Clinical-ComBAT: a diffusion MRI harmonization method for clinical normative modeling applications*.  Submitted to Medical Image Analysis.
-- Jodoin, P.-M., Edde, M., Girard, G., et al. (2025). ComBAT harmonization for diffusion MRI: Challenges and best practices. accepted at Nature Scientific Reports. https://arxiv.org/abs/2505.14722
+- Jodoin, P.-M., Edde, M., Girard, G., et al. (2025). Challenges and best practices when using ComBAT to harmonize diffusion MRI data.
+*Nature Scientific Reports*, 15, 41508.
+https://www.nature.com/articles/s41598-025-25400-x
 - Fortin, J.-P., Parker, D., Tun¸c, B., et al. (2017). Harmonization of multi-site diffusion tensor imaging data. *NeuroImage*, 161, 149–170. https://doi.org/10.1016/j.neuroimage.2017.08.047
 
 ## Licence
@@ -86,7 +88,7 @@ The code supports two harmonization modes, namely clinical and pairwise. In both
 | Method | Description |
 | --- | --- |
 | `clinical` (default) | Harmonizes a moving site to a normative reference following the Clinical-ComBAT method (Girard et al., 2025). It fits site-specific polynomial covariate models, anchors variance with Bayesian priors suited to small cohorts, and auto-tunes the hyperparameters to keep the harmonized metrics consistent with the reference population. |
-| `pairwise` | Adaptation of the original ComBAT (Fortin et al., 2017) that still fits both sites together but explicitly anchors the harmonization to a chosen reference site. For more details, see Jodoin et al. (2025), *ComBAT Harmonization for Diffusion MRI: Challenges and Best Practices* (arXiv:2505.14722). |
+| `pairwise` | Adaptation of the original ComBAT (Fortin et al., 2017) that still fits both sites together but explicitly anchors the harmonization to a chosen reference site. For more details, see Jodoin et al. (2025), *ComBAT Harmonization for Diffusion MRI: Challenges and Best Practices* (Nature Scientific Reports:41508). |
 
 Common options for both methods:
 - age filtering (`--limit_age_range`)
