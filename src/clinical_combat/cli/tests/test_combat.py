@@ -72,8 +72,8 @@ def test_combat_pairwise():
     npt.assert_array_almost_equal(a, b)
 
 
-def test_combat_clinic():
-    out = os.path.join(COMBAT_ROOT, "src/clinical_combat/cli/tests/out/Combat_clinic")
+def test_combat_clinical():
+    out = os.path.join(COMBAT_ROOT, "src/clinical_combat/cli/tests/out/Combat_clinical")
 
     if os.path.exists(out):
         shutil.rmtree(out)
@@ -84,24 +84,24 @@ def test_combat_clinic():
         + "CamCAN.md.raw.csv.gz "
         + data_path
         + "ModifiedCamCAN.md.raw.csv.gz "
-        + "-m clinic "
+        + "-m clinical "
         + "--out_dir "
         + out
     )
     subprocess.call(cmd, shell=True)
 
-    model = os.path.join(out, "ModifiedCamCAN-CamCAN.md.clinic.model.csv")
-    data = os.path.join(out, "ModifiedCamCAN.md.clinic.harmonized.csv.gz")
+    model = os.path.join(out, "ModifiedCamCAN-CamCAN.md.clinical.model.csv")
+    data = os.path.join(out, "ModifiedCamCAN.md.clinical.harmonized.csv.gz")
     fig1 = os.path.join(
         out, "AgeCurve_CamCAN-ModifiedCamCAN_raw_md_mniIITmaskskeletonFA.png"
     )
     fig2 = os.path.join(
-        out, "AgeCurve_CamCAN-ModifiedCamCAN_clinic_harmonized_md_mniIITmaskskeletonFA.png"
+        out, "AgeCurve_CamCAN-ModifiedCamCAN_clinical_harmonized_md_mniIITmaskskeletonFA.png"
     )
     fig3 = os.path.join(
-        out, "DataModels_CamCAN-ModifiedCamCAN_clinic_harmonized_md_mniIITmaskskeletonFA.png"
+        out, "DataModels_CamCAN-ModifiedCamCAN_clinical_harmonized_md_mniIITmaskskeletonFA.png"
     )
-    dist1 = os.path.join(out, "ModifiedCamCAN.md.clinic.harmonized.bhattacharrya.txt")
+    dist1 = os.path.join(out, "ModifiedCamCAN.md.clinical.harmonized.bhattacharrya.txt")
     dist2 = os.path.join(out, "ModifiedCamCAN.md.raw.bhattacharrya.txt")
 
     npt.assert_(os.path.exists(model), msg="Model file not generated.")
@@ -116,8 +116,8 @@ def test_combat_clinic():
 
     model_ = os.path.join(
         COMBAT_ROOT,
-        "src/clinical_combat/cli/tests/target_out/Combat_clinic",
-        "ModifiedCamCAN-CamCAN.md.clinic.model.csv",
+        "src/clinical_combat/cli/tests/target_out/Combat_clinical",
+        "ModifiedCamCAN-CamCAN.md.clinical.model.csv",
     )
     a = np.loadtxt(model, dtype=str, delimiter=",")
     b = np.loadtxt(model_, dtype=str, delimiter=",")
@@ -125,8 +125,8 @@ def test_combat_clinic():
 
     data_ = os.path.join(
         COMBAT_ROOT,
-        "src/clinical_combat/cli/tests/target_out/Combat_clinic",
-        "ModifiedCamCAN.md.clinic.csv.gz",
+        "src/clinical_combat/cli/tests/target_out/Combat_clinical",
+        "ModifiedCamCAN.md.clinical.csv.gz",
     )
     a = pd.read_csv(data)["mean"].to_numpy()
     b = pd.read_csv(data_)["mean"].to_numpy()

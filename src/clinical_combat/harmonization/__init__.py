@@ -3,7 +3,7 @@ from __future__ import absolute_import
 
 import ast
 
-from clinical_combat.harmonization.CombatClinic import CombatClinic
+from clinical_combat.harmonization.CombatClinical import CombatClinical
 from clinical_combat.harmonization.CombatPairwise import CombatPairwise
 
 
@@ -30,8 +30,8 @@ def from_model_name(
             degree=degree,
             regul=regul
         )
-    elif name == "clinic":
-        QC = CombatClinic(
+    elif name == "clinical":
+        QC = CombatClinical(
             ignore_sex_covariate=ignore_sex_covariate,
             ignore_handedness_covariate=ignore_handedness_covariate,
             use_empirical_bayes=use_empirical_bayes,

@@ -6,7 +6,7 @@ import numpy as np
 from clinical_combat.harmonization.Combat import Combat
 
 
-class CombatClinic(Combat):
+class CombatClinical(Combat):
     """
     ComBat: Harmonize the moving site to the reference site.
     Each site regression parameters is fitted independently.
@@ -143,7 +143,7 @@ class CombatClinic(Combat):
         self.model_params["regul_mov"] = self.regul_mov
         self.model_params["nu"] = self.nu
         self.model_params["tau"] = self.tau
-        self.model_params["name"] = "clinic"
+        self.model_params["name"] = "clinical"
 
     def save_model(self, model_filename):
         """
@@ -187,7 +187,7 @@ class CombatClinic(Combat):
 
     def standardize_moving_data(self, X, Y):
         """
-        Standardize the data (Y). Combat Clinic standardize
+        Standardize the data (Y). Combat Clinical standardize
         the moving site data with the moving site intercept.
         Because the data are harmonize to
         the reference site, sigma is obtained from the reference site data.
@@ -211,7 +211,7 @@ class CombatClinic(Combat):
 
     def fit(self, ref_data, mov_data):
         """
-        Combat Clinic fit.
+        Combat Clinical fit.
         The moving site beta and alpha are fitted using the moving site data.
         The reference site alpha and beta is fitted using
         the reference site data.
