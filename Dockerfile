@@ -32,9 +32,9 @@ ENV PATH="/opt/venvs/combat/bin:$PATH"
 RUN uv cache clean
 RUN uv pip install --upgrade pip setuptools==75.1.0 wheel setuptools_scm kiwisolver fonttools
 
-# Install combat
-ADD https://github.com/scil-vital/clinical-ComBAT.git#1.1.0 /clinical-ComBAT
+# Install clinical-ComBAT
 WORKDIR /clinical-ComBAT
+COPY . .
 RUN uv pip install -e . --no-build-isolation
 
 WORKDIR /
