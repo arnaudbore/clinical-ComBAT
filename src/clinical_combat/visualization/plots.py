@@ -111,8 +111,8 @@ def add_reference_percentiles_to_curve(
     line_style="solid",
     set_color="#000000",
     add_grid=False,
-    moving_site=False,
-    plot_json: PlotJson = None
+    plot_json: PlotJson = None,
+    id="reference"
 ):
     """
     Adds percentile data to the joint plot for the reference site.
@@ -141,10 +141,9 @@ def add_reference_percentiles_to_curve(
         )
 
         if plot_json is not None:
-            site_str = "moving" if moving_site else "reference"
             plot_json.add_plot(
-                plot_group=f"{site_str}_percentiles",
-                plot_name=f"{site_str}_percentile_{curr_percentile}",
+                plot_group=f"{id}_percentiles",
+                plot_name=f"{id}_percentile_{curr_percentile}",
                 plot_class=PlotJson.Type.LINE,
                 data_x=ref_age,
                 data_y=ref_percentiles[:, curr_percentile_idx].tolist(),

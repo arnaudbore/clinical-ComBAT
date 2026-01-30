@@ -449,8 +449,8 @@ def main():
                     reference_percentiles,
                     args.percentiles,
                     args.line_widths,
-                    moving_site=False,
-                    plot_json=plot_json
+                    plot_json=plot_json,
+                    id="reference"
                 )
 
             # Moving site data
@@ -585,8 +585,8 @@ def main():
                         args.line_widths,
                         set_color=moving_palette,
                         line_style=moving_linestyle,
-                        moving_site=True,
-                        plot_json=plot_json
+                        plot_json=plot_json,
+                        id="moving_raw" if harmonization == "raw" else "moving_harmonized"
                     )
 
             # Add disease scatterplot to Curve plot
