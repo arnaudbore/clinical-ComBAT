@@ -375,8 +375,7 @@ def main():
                 xlim=(min_age, max_age),
                 marginal_hist=args.display_marginal_hist,
                 hist_hur_order=valid_site_list,
-                hist_palette=custom_palette[: len(valid_site_list)],
-                plot_json=plot_json
+                hist_palette=custom_palette[: len(valid_site_list)]
             )
 
             # Reference data
@@ -425,8 +424,7 @@ def main():
                         site_window_std,
                         label_site=label,
                         ylim=(ymin, ymax),
-                        color=custom_palette[0],
-                        plot_json=plot_json
+                        color=custom_palette[0]
                     )
             else:
                 # The percentiles are displayed on the plot
@@ -484,8 +482,7 @@ def main():
                         "site",
                         hue_order=moving_site,
                         alpha=0.8,
-                        palette=[moving_palette],
-                        plot_json=plot_json
+                        palette=[moving_palette]
                     )
 
                 # Add error bars to the plot for post harmonization figures
@@ -508,8 +505,7 @@ def main():
                         df_site["mean"],
                         error_data,
                         [moving_palette],
-                        label=moving_site[0],
-                        plot_json=plot_json
+                        label=moving_site[0]
                     )
 
             # Add site data CURVES to plot - Default
@@ -560,8 +556,7 @@ def main():
                             site_window_std,
                             label_site=label,
                             ylim=(ymin, ymax),
-                            color=moving_palette,
-                            plot_json=plot_json
+                            color=moving_palette
                         )
 
                 else:
@@ -619,8 +614,7 @@ def main():
                     alpha=0.8,
                     hue_order=args.diseases,
                     legend="auto",
-                    palette=custom_palette[::-1][: len(args.diseases)],
-                    plot_json=plot_json
+                    palette=custom_palette[::-1][: len(args.diseases)]
                 )
 
             # Save figure
@@ -649,8 +643,7 @@ def main():
                 prefix_save=prefix,
                 title=" \n" + " Age Curve - ",
                 outpath=args.out_dir,
-                outname=args.outname,
-                plot_json=plot_json
+                outname=args.outname
             )
 
             plots.add_plot_json(plot_json)

@@ -213,8 +213,7 @@ def main():
             marginal_hist=args.display_marginal_hist,
             xlim=(args.xlim[0], args.xlim[1]),
             hist_hur_order=df_vals.input.unique().tolist(),
-            hist_palette=curr_palette,
-            plot_json=plot_json
+            hist_palette=curr_palette
         )
 
         # Add data to build figure frame (white)
@@ -227,8 +226,7 @@ def main():
             hue_order=df_vals.input.unique().tolist(),
             alpha=0,
             palette=curr_palette,
-            legend=False,
-            plot_json=plot_json
+            legend=False
         )
 
         # Add regression line from models to the plot
@@ -276,8 +274,7 @@ def main():
                 hue_order=df_vals.input.unique().tolist(),
                 alpha=0.8,
                 palette=curr_palette,
-                legend=False,
-                plot_json=plot_json
+                legend=False
             )
 
             if not args.hide_disease:
@@ -294,8 +291,7 @@ def main():
                     alpha=0.8,
                     hue_order=all_disease,
                     legend="auto",
-                    palette=custom_palette[::-1][: len(all_disease)],
-                    plot_json=plot_json
+                    palette=custom_palette[::-1][: len(all_disease)]
                 )
 
         # Add legend to the plot
@@ -328,8 +324,7 @@ def main():
             legend_title="Models - Sites",
             title=" \n" + " Data Models - ",
             outpath=args.out_dir,
-            outname=args.outname,
-            plot_json=plot_json
+            outname=args.outname
         )
 
         plots.add_plot_json(plot_json)

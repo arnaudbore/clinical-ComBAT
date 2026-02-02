@@ -39,8 +39,7 @@ def initiate_joint_marginal_plot(
     hist_palette=None,
     hist_hur_order=None,
     hist_legend=False,
-    legend_title="Sites",
-    plot_json: PlotJson = None
+    legend_title="Sites"
 ):
     """
     Initiate a joint plot with marginal histogram.
@@ -190,8 +189,7 @@ def add_site_curve_to_reference_curve(
     color="r",
     add_grid=False,
     alpha=0.2,
-    linestyle="-",
-    plot_json: PlotJson = None
+    linestyle="-"
 ):
     """
     Adds percentile data to the joint plot for the reference site.
@@ -246,8 +244,7 @@ def add_scatterplot_to_curve(
     marker="o",
     marker_size=30,
     linewidth=0,
-    legend=True,
-    plot_json: PlotJson = None
+    legend=True
 ):
     """
     Adds points corresponding to specific data to the joint plot.
@@ -287,25 +284,6 @@ def add_scatterplot_to_curve(
     )
     if legend:
         ax.legend()
-
-    if plot_json is not None:
-        plot_json.add_plot(
-            plot_name="scatterplot_{}_{}".format(x, y),
-            plot_class=PlotJson.Type.SCATTER,
-            data_x=df[x].tolist(),
-            data_y=df[y].tolist(),
-            hue=df[hue].tolist() if hue is not None else None,
-            x_label=x,
-            y_label=y,
-            hue_label=hue,
-            hue_order=hue_order,
-            alpha=alpha,
-            marker=marker,
-            marker_size=marker_size,
-            linewidth=linewidth,
-            palette=palette,
-            legend=legend
-        )
 
     return ax
 
@@ -438,8 +416,7 @@ def add_errorbars_to_plot(
     label=None,
     alpha=0.4,
     line_width=0,
-    linestyle="none",
-    plot_json: PlotJson = None
+    linestyle="none"
 ):
     """
     Adds error bars to the plot. Only available for scatter plots.
@@ -671,8 +648,7 @@ def update_global_figure_style_and_save(
     empty_background=False,
     dpi=300,
     outpath=None,
-    outname=None,
-    plot_json: PlotJson = None
+    outname=None
 ):
     """
     Update figure for x and y axis labels, legend (position change) and adjust final figure size.
