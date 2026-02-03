@@ -128,7 +128,7 @@ def main():
     # Merge the three detail info lists in a single variable and
     # set column names
     details_pop = [len(sid_unique), txt_disease_age,
-                   diseases_str, txt_sex, txt_hand]
+                   diseases_str, txt_hand, txt_sex]
     varname_detail = [
         "N Unique Sid",
         "Age by",
