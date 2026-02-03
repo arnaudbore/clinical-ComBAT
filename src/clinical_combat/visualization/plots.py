@@ -20,6 +20,7 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 
 from clinical_combat.utils.scilpy_utils import assert_outputs_exist
+from clinical_combat.utils.plotjson import PlotJson
 
 matplotlib.use("Agg")
 warnings.filterwarnings("ignore")
@@ -38,7 +39,7 @@ def initiate_joint_marginal_plot(
     hist_palette=None,
     hist_hur_order=None,
     hist_legend=False,
-    legend_title="Sites",
+    legend_title="Sites"
 ):
     """
     Initiate a joint plot with marginal histogram.
@@ -109,6 +110,8 @@ def add_reference_percentiles_to_curve(
     line_style="solid",
     set_color="#000000",
     add_grid=False,
+    plot_json: PlotJson = None,
+    id="reference"
 ):
     """
     Adds percentile data to the joint plot for the reference site.
@@ -135,6 +138,22 @@ def add_reference_percentiles_to_curve(
             linewidth=set_line_widths[curr_percentile_idx],
             label=str(curr_percentile).zfill(2) + "th percentile",
         )
+
+        if plot_json is not None:
+            plot_json.add_plot(
+                plot_group=f"{id}_percentiles",
+                plot_name=f"{id}_percentile_{curr_percentile}",
+                plot_class=PlotJson.Type.LINE,
+                data_x=ref_age,
+                data_y=ref_percentiles[:, curr_percentile_idx].tolist(),
+                x_label="age",
+                y_label="value",
+                percentile=curr_percentile,
+                color=set_color,
+                line_style=line_style,
+                line_width=set_line_widths[curr_percentile_idx]
+            )
+
     ax.fill_between(
         ref_age,
         ref_percentiles[:, 0],
@@ -170,7 +189,7 @@ def add_site_curve_to_reference_curve(
     color="r",
     add_grid=False,
     alpha=0.2,
-    linestyle="-",
+    linestyle="-"
 ):
     """
     Adds percentile data to the joint plot for the reference site.
@@ -225,7 +244,7 @@ def add_scatterplot_to_curve(
     marker="o",
     marker_size=30,
     linewidth=0,
-    legend=True,
+    legend=True
 ):
     """
     Adds points corresponding to specific data to the joint plot.
@@ -237,7 +256,7 @@ def add_scatterplot_to_curve(
         x (str): Column name for x-axis
         y (str): Column name for y-axis
         hue (str): Column name for hue color
-        hur_order (list): List of hue order for data (default: None)
+        hue_order (list): List of hue order for data (default: None)
         alpha (float): Transparency (default: 0.5)
         marker (str): Marker shape (default: o)
         marker_size (int): Marker size (default: 30)
@@ -295,6 +314,7 @@ def add_models_to_plot(
     lightness=1,
     line_width=2.5,
     line_style="--",
+    plot_json: PlotJson = None
 ):
     x = np.arange(age_min, age_max, 1)
     # Set the color for regression line
@@ -311,6 +331,25 @@ def add_models_to_plot(
         linewidth=line_width,
         linestyle=line_style,
     )
+
+    if plot_json is not None:
+        plot_json.add_plot(
+            plot_name="regression_{}".format("moving" if moving_site else "reference"),
+            bundle=bundle,
+            metric=df_model.model_params["name"],
+            site=df_model.model_params["mov_site"] if moving_site else df_model.model_params["ref_site"],
+            plot_class=PlotJson.Type.LINE,
+            data_x=x.tolist(),
+            data_y=y.tolist(),
+            x_label="age",
+            y_label=bundle,
+            model_name=df_model.model_params["name"],
+            moving_site=moving_site,
+            color=color,
+            lightness=lightness,
+            line_width=line_width,
+            line_style=line_style
+        )
 
     return ax
 
@@ -377,7 +416,7 @@ def add_errorbars_to_plot(
     label=None,
     alpha=0.4,
     line_width=0,
-    linestyle="none",
+    linestyle="none"
 ):
     """
     Adds error bars to the plot. Only available for scatter plots.
@@ -609,7 +648,7 @@ def update_global_figure_style_and_save(
     empty_background=False,
     dpi=300,
     outpath=None,
-    outname=None,
+    outname=None
 ):
     """
     Update figure for x and y axis labels, legend (position change) and adjust final figure size.

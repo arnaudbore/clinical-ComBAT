@@ -64,6 +64,7 @@ import argparse
 import logging
 import random
 from itertools import product
+from os.path import join
 
 import numpy as np
 import pandas as pd
@@ -88,6 +89,8 @@ from clinical_combat.visualization.viz import (
     viz_identify_valid_sites,
 )
 
+from clinical_combat.utils.plotjson import PlotJson, PlotJsonAggregator
+
 
 def _build_arg_parser():
     p = argparse.ArgumentParser(
@@ -108,6 +111,9 @@ def _build_arg_parser():
                      help="Filename to save figure.")
     out.add_argument("--add_suffix",
                      help="Add suffix to figure title and output PNG filename.")
+    out.add_argument("--save_curves_json",
+                     action="store_true",
+                     help="Save percentiles curves data in JSON format for downstream visualization.")
 
     wdw = p.add_argument_group(title="Window options for the "
                                      "moving average mean and standard "
@@ -288,6 +294,8 @@ def main():
         args.y_axis_percentile[1]
     )
 
+    plots = PlotJsonAggregator()
+
     for bundle in args.bundles:
         logging.info("Processing: %s", bundle)
         df_vals = df.query(
@@ -305,6 +313,8 @@ def main():
         if len(df_vals) == 0:
             logging.info("No data found for metric %s and bundle %s.", metric, bundle)
             continue
+
+        plot_json = PlotJson(bundle=bundle, metric=metric)
 
         # Extract reference site data for bundle
         df_ref_bundle = df.query(
@@ -334,6 +344,17 @@ def main():
             ymax = ymax + (
                 df_ref_bundle["mean"].max() * (0.05 + args.increase_ylim / 100)
             )
+
+        # Set prefix to save figure
+        prefix = "AgeCurve_{}-{}".format(
+            ref_site[0], moving_site[0].replace("_", "")
+        )
+        # Set suffix to save figure
+        suffix = ""
+        if args.display_point:
+            suffix += "_scatter"
+        if args.add_suffix is not None:
+            suffix += "_" + args.add_suffix
 
         # Generate figure for each harmonization type
         for harmonization, model in product(
@@ -368,7 +389,7 @@ def main():
                 xlim=(min_age, max_age),
                 marginal_hist=args.display_marginal_hist,
                 hist_hur_order=valid_site_list,
-                hist_palette=custom_palette[: len(valid_site_list)],
+                hist_palette=custom_palette[: len(valid_site_list)]
             )
 
             # Reference data
@@ -417,7 +438,7 @@ def main():
                         site_window_std,
                         label_site=label,
                         ylim=(ymin, ymax),
-                        color=custom_palette[0],
+                        color=custom_palette[0]
                     )
             else:
                 # The percentiles are displayed on the plot
@@ -440,6 +461,8 @@ def main():
                     reference_percentiles,
                     args.percentiles,
                     args.line_widths,
+                    plot_json=plot_json,
+                    id="reference"
                 )
 
             # Moving site data
@@ -473,7 +496,7 @@ def main():
                         "site",
                         hue_order=moving_site,
                         alpha=0.8,
-                        palette=[moving_palette],
+                        palette=[moving_palette]
                     )
 
                 # Add error bars to the plot for post harmonization figures
@@ -496,7 +519,7 @@ def main():
                         df_site["mean"],
                         error_data,
                         [moving_palette],
-                        label=moving_site[0],
+                        label=moving_site[0]
                     )
 
             # Add site data CURVES to plot - Default
@@ -547,7 +570,7 @@ def main():
                             site_window_std,
                             label_site=label,
                             ylim=(ymin, ymax),
-                            color=moving_palette,
+                            color=moving_palette
                         )
 
                 else:
@@ -571,6 +594,8 @@ def main():
                         args.line_widths,
                         set_color=moving_palette,
                         line_style=moving_linestyle,
+                        plot_json=plot_json,
+                        id="moving_raw" if harmonization == "raw" else "moving_harmonized"
                     )
 
             # Add disease scatterplot to Curve plot
@@ -603,21 +628,10 @@ def main():
                     alpha=0.8,
                     hue_order=args.diseases,
                     legend="auto",
-                    palette=custom_palette[::-1][: len(args.diseases)],
+                    palette=custom_palette[::-1][: len(args.diseases)]
                 )
 
             # Save figure
-            # Set prefix to save figure
-            prefix = "AgeCurve_{}-{}".format(
-                ref_site[0], moving_site[0].replace("_", "")
-            )
-            # Set suffix to save figure
-            suffix = ""
-            if args.display_point:
-                suffix += "_scatter"
-            if args.add_suffix is not None:
-                suffix += "_" + args.add_suffix
-
             # Update aspect and save figure in PNG.
             update_global_figure_style_and_save(
                 g,
@@ -632,8 +646,22 @@ def main():
                 prefix_save=prefix,
                 title=" \n" + " Age Curve - ",
                 outpath=args.out_dir,
-                outname=args.outname,
+                outname=args.outname
             )
+
+            plots.add_plot_json(plot_json)
+    
+    if args.save_curves_json:
+        harmonization_methods = "_".join([m for m in np.unique(df.harmonization) if m != "raw"])
+
+        json_filename = "{prefix}_{method}_{metric}{suffix}.json".format(
+            prefix=prefix,
+            method=harmonization_methods,
+            metric=metric.replace("_", ""),
+            suffix=suffix
+        )
+        out_json_path = join(args.out_dir, json_filename)
+        plots.save_aggregated_json(out_json_path)
 
 
 if __name__ == "__main__":

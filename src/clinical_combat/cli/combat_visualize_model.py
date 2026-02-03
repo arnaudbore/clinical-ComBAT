@@ -26,6 +26,7 @@ combat_visualize_model reference_site.raw.csv.gz moving_site.raw.csv.gz \
 
 import argparse
 import logging
+from os.path import join
 
 import matplotlib
 import numpy as np
@@ -45,7 +46,7 @@ from clinical_combat.visualization.plots import (
 from clinical_combat.visualization.viz import (custom_palette,
                                                generate_query,
                                                line_style)
-
+from clinical_combat.utils.plotjson import PlotJson, PlotJsonAggregator
 
 def _build_arg_parser():
     p = argparse.ArgumentParser(
@@ -74,6 +75,9 @@ def _build_arg_parser():
     out.add_argument("--add_suffix",
                      help="Add suffix to figure title and "
                           " output PNG filename.")
+    out.add_argument("--save_curves_json",
+                     action="store_true",
+                     help="Save model regression curves data in JSON format for downstream visualization.")
 
     viz = p.add_argument_group(title="Display options")
     viz.add_argument("--hide_disease",
@@ -186,6 +190,17 @@ def main():
     if mov_site != df.site.unique()[1]:
         raise ValueError("Model site and moving data site don't match.")
 
+    plots = PlotJsonAggregator()
+
+    # Set prefix to save figure
+    prefix = "DataModels_{}-{}".format(
+        ref_site.replace("_", ""), mov_site.replace("_", "")
+    )
+
+    suffix = ""
+    if args.add_suffix is not None:
+        suffix += "_" + args.add_suffix
+
     # Generate plots for each bundle
     for bundle in args.bundles:
         logging.info("Processing: %s", bundle)
@@ -196,6 +211,8 @@ def main():
         else:
             ymin = df_vals["mean"].min() - df_vals["mean"].min() * 0.05
             ymax = df_vals["mean"].max() + df_vals["mean"].max() * 0.05
+
+        plot_json = PlotJson(bundle=bundle, metric=metric)
 
         # Initialize the joint plot
         g, ax = initiate_joint_marginal_plot(
@@ -208,7 +225,7 @@ def main():
             marginal_hist=args.display_marginal_hist,
             xlim=(args.xlim[0], args.xlim[1]),
             hist_hur_order=df_vals.input.unique().tolist(),
-            hist_palette=curr_palette,
+            hist_palette=curr_palette
         )
 
         # Add data to build figure frame (white)
@@ -221,7 +238,7 @@ def main():
             hue_order=df_vals.input.unique().tolist(),
             alpha=0,
             palette=curr_palette,
-            legend=False,
+            legend=False
         )
 
         # Add regression line from models to the plot
@@ -239,6 +256,7 @@ def main():
             lightness=args.lightness,
             line_width=args.line_width,
             line_style=line_style[0],
+            plot_json=plot_json
         )
 
         # Moving regression curve
@@ -253,6 +271,7 @@ def main():
             lightness=args.lightness,
             line_width=args.line_width,
             line_style=line_style[0],
+            plot_json=plot_json
         )
 
         # Add scatter point and regression line from models
@@ -267,7 +286,7 @@ def main():
                 hue_order=df_vals.input.unique().tolist(),
                 alpha=0.8,
                 palette=curr_palette,
-                legend=False,
+                legend=False
             )
 
             if not args.hide_disease:
@@ -284,7 +303,7 @@ def main():
                     alpha=0.8,
                     hue_order=all_disease,
                     legend="auto",
-                    palette=custom_palette[::-1][: len(all_disease)],
+                    palette=custom_palette[::-1][: len(all_disease)]
                 )
 
         # Add legend to the plot
@@ -292,15 +311,6 @@ def main():
         ax.legend(handle, [ref_site, mov_site])
 
         # Save figure
-        # Set prefix to save figure
-        prefix = "DataModels_{}-{}".format(
-            ref_site.replace("_", ""), mov_site.replace("_", "")
-        )
-
-        suffix = ""
-        if args.add_suffix is None:
-            args.add_suffix = ""
-
         # Update aspect and save figure in PNG.
         update_global_figure_style_and_save(
             g,
@@ -317,8 +327,20 @@ def main():
             legend_title="Models - Sites",
             title=" \n" + " Data Models - ",
             outpath=args.out_dir,
-            outname=args.outname,
+            outname=args.outname
         )
+
+        plots.add_plot_json(plot_json)
+    
+    if args.save_curves_json:
+        # Save all plots data to a single JSON file
+        json_filename = "{prefix}_{method}_{metric}.json".format(
+            prefix=prefix,
+            method=QC.model_params["name"].replace("_", ""),
+            metric=metric.replace("_", "")
+        )
+        out_json_path = join(args.out_dir, json_filename)
+        plots.save_aggregated_json(out_json_path)
 
 
 if __name__ == "__main__":
